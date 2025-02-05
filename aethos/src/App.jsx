@@ -1,9 +1,10 @@
-import AIChatInterface from './components/ChatInterface';
+import ChatApp from "./components/ChatInterface";
+
 
 function App() {
   return (
     <div className="min-h-screen bg-primary text-primary">
-      <AIChatInterface />
+      <ChatApp />
     </div>
   );
 }

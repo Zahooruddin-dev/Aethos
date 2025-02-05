@@ -1,155 +1,88 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  LucideRobot, 
-  LucideSend, 
-  LucideClipboard, 
-  LucideRefreshCw 
-} from 'lucide-react';
+import { Bot, Send, Clipboard, RefreshCw } from 'lucide-react';
+import axios from 'axios';
+import '../index.css';
 
-const AIChatInterface = () => {
-  const [messages, setMessages] = useState([]);
+const ChatApp = () => {
+  const [messages, setMessages] = useState(() => JSON.parse(localStorage.getItem('chatHistory')) || []);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showGeminiResponse, setShowGeminiResponse] = useState(false);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    localStorage.setItem('chatHistory', JSON.stringify(messages));
+    scrollToBottom();
+  }, [messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const handleSendMessage = async (e) => {
+  const sendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
-
-    const newMessage = {
-      id: Date.now(),
-      text: input,
-      sender: 'user',
-      timestamp: new Date().toLocaleTimeString()
-    };
-
-    setMessages(prev => [...prev, newMessage]);
+    
+    const userMessage = { id: Date.now(), text: input, sender: 'user' };
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
-
+    
     try {
-      // Simulated AI responses (replace with actual API calls)
+      const geminiResponse = await axios.post(`${import.meta.env.VITE_GEMINI_API_URL}/chat`, { query: input }, { headers: { 'Authorization': `Bearer ${import.meta.env.VITE_GEMINI_API_KEY}` } });
+      const geminiText = geminiResponse.data.response;
+      
+      const humanizedResponse = await axios.post(`${import.meta.env.VITE_HUMANIZA_API_URL}/humanize`, { text: geminiText }, { headers: { 'Authorization': `Bearer ${import.meta.env.VITE_HUMANIZA_API_KEY}` } });
+      
       const aiResponses = [
-        { 
-          id: Date.now() + 1, 
-          text: `Generated response for: ${input}`, 
-          sender: 'gemini',
-          timestamp: new Date().toLocaleTimeString()
-        },
-        { 
-          id: Date.now() + 2, 
-          text: `Humanized response for: ${input}`, 
-          sender: 'humanized',
-          timestamp: new Date().toLocaleTimeString()
-        }
+        { id: Date.now() + 1, text: geminiText, sender: 'gemini' },
+        { id: Date.now() + 2, text: humanizedResponse.data.humanizedText, sender: 'humanized' }
       ];
-
-      setTimeout(() => {
-        setMessages(prev => [...prev, ...aiResponses]);
-        setIsLoading(false);
-      }, 1500);
-
+      
+      setMessages(prev => [...prev, ...aiResponses]);
     } catch (error) {
-      console.error('Message send error:', error);
+      console.error('Error fetching AI response:', error);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const copyToClipboard = (text) => {
-    navigator.clipboard.writeText(text);
-  };
-
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col">
-      <div className="flex-grow overflow-y-auto p-4 space-y-4">
+    <div className="chat-container">
+      <div className="messages-list">
         <AnimatePresence>
           {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className={`flex ${
-                msg.sender === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              <div 
-                className={`
-                  max-w-[80%] p-3 rounded-lg 
-                  ${msg.sender === 'user' 
-                    ? 'bg-blue-600 text-white' 
-                    : msg.sender === 'gemini'
-                    ? 'bg-green-600 text-white'
-                    : 'bg-purple-600 text-white'
-                  }
-                `}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs opacity-70 mr-2">
-                    {msg.sender}
-                  </span>
-                  <button 
-                    onClick={() => copyToClipboard(msg.text)}
-                    className="hover:bg-white/20 rounded-full p-1"
-                  >
-                    <LucideClipboard size={14} />
+            <motion.div key={msg.id} className={`message ${msg.sender}`}>
+              <div className="message-header">
+                <span>{msg.sender}</span>
+                {msg.sender !== 'user' && (
+                  <button onClick={() => navigator.clipboard.writeText(msg.text)}>
+                    <Clipboard size={14} />
                   </button>
-                </div>
-                {msg.text}
-                <div className="text-xs opacity-50 text-right">
-                  {msg.timestamp}
-                </div>
+                )}
               </div>
+              <p>{msg.text}</p>
             </motion.div>
           ))}
         </AnimatePresence>
-
         {isLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex justify-start"
-          >
-            <div className="flex items-center bg-gray-700 p-3 rounded-lg">
-              <LucideRobot className="mr-2 animate-pulse" />
-              <span>Generating response...</span>
-            </div>
+          <motion.div className="loading">
+            <Bot className="animate-pulse" />
+            <span>Generating response...</span>
           </motion.div>
         )}
-
         <div ref={messagesEndRef} />
       </div>
-
-      <form 
-        onSubmit={handleSendMessage} 
-        className="p-4 bg-gray-800 flex items-center"
-      >
-        <input 
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          className="flex-grow bg-gray-700 text-white p-3 rounded-lg mr-2"
-        />
-        <button 
-          type="submit" 
-          disabled={isLoading}
-          className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition"
-        >
-          {isLoading ? <LucideRefreshCw className="animate-spin" /> : <LucideSend />}
-        </button>
+      <form onSubmit={sendMessage} className="input-container">
+        <input type="text" value={input} onChange={(e) => setInput(e.target.value)} placeholder="Type your message..." />
+        <button type="submit" disabled={isLoading}>{isLoading ? <RefreshCw className="spin" /> : <Send />}</button>
       </form>
+      <button className="toggle-gemini" onClick={() => setShowGeminiResponse(!showGeminiResponse)}>
+        {showGeminiResponse ? 'Hide Gemini Response' : 'Show Gemini Response'}
+      </button>
     </div>
   );
 };
 
-export default AIChatInterface;
+export default ChatApp;
