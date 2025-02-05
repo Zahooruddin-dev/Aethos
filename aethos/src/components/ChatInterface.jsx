@@ -31,15 +31,9 @@ const ChatApp = () => {
 
   const handleError = (error) => {
     console.error('API Error:', error);
-    let errorMessage = 'Failed to fetch response. Please try again.';
-    
-    if (error.response) {
-      errorMessage = error.response.data?.error?.message || 
-                    error.response.data?.message || 
-                    errorMessage;
-    } else if (error.request) {
-      errorMessage = 'No response from server. Check your connection.';
-    }
+    const errorMessage = error.response?.data?.error?.message || 
+                         error.response?.data?.message || 
+                         'Failed to fetch response. Please try again.';
     
     setError(errorMessage);
     setTimeout(() => setError(''), 5000);
@@ -57,9 +51,9 @@ const ChatApp = () => {
   
     try {
       const response = await axios.post(
-        `${import.meta.env.VITE_OPENROUTER_API_URL}/generate`,
+        `${import.meta.env.VITE_OPENROUTER_API_URL}/chat/completions`,
         {
-          model: "anthropic/claude-3-haiku", // Example model
+          model: "google/gemini-2.0-flash-thinking-exp:free",
           messages: [{ role: "user", content: input }]
         },
         {
@@ -70,8 +64,9 @@ const ChatApp = () => {
         }
       );
   
+      // Correct path for OpenRouter API response
       const aiText = response.data?.choices?.[0]?.message?.content || 
-                    'Could not understand response format';
+                     'Could not understand response format';
       
       const aiResponse = { 
         id: Date.now() + 1, 
@@ -84,7 +79,7 @@ const ChatApp = () => {
       handleError(error);
       const errorMessage = {
         id: Date.now() + 2,
-        text: 'Failed to get response. Please try again.',
+        text: 'Failed to get response. Please check your connection.',
         sender: 'system'
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -92,10 +87,11 @@ const ChatApp = () => {
       setIsLoading(false);
     }
   };
+
   return (
     <div className="chat-container">
       <div className="chat-header">
-        <h2>Gemini Chat <Bot size={20} /></h2>
+        <h2>Claude Chat <Bot size={20} /></h2>
         <button onClick={clearHistory} className="clear-btn">
           <Trash2 size={18} />
         </button>
@@ -115,7 +111,7 @@ const ChatApp = () => {
             >
               <div className="message-header">
                 <span className="sender-tag">
-                  {msg.sender === 'user' ? 'You' : 'Gemini'}
+                  {msg.sender === 'user' ? 'You' : 'Claude'}
                 </span>
                 {msg.sender !== 'user' && (
                   <button 
