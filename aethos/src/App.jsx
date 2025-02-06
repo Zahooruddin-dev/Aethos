@@ -1,12 +1,7 @@
-import ChatApp from "./components/ChatInterface";
-
+import ChatApp from './components/ChatInterface';
 
 function App() {
-  return (
-    <div className="min-h-screen bg-primary text-primary">
-      <ChatApp />
-    </div>
-  );
+	return <ChatApp />;
 }
 
 export default App;

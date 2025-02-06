@@ -1,42 +1,100 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+
+
+/* Custom Scrollbar */
+.messages-list::-webkit-scrollbar {
+  width: 8px;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.messages-list::-webkit-scrollbar-track {
+  background: #2a2a2a;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.messages-list::-webkit-scrollbar-thumb {
+  background: #4f4f4f;
+  border-radius: 4px;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+/* Message Bubbles */
+.message {
+  max-width: 80%;
+  padding: 1rem;
+  border-radius: 1rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
 }
 
-.card {
-  padding: 2em;
+.message.user {
+  align-self: flex-end;
+  background: #007bff;
+  color: white;
 }
 
-.read-the-docs {
-  color: #888;
+.message.gemini {
+  align-self: flex-start;
+  background-color: #43a047;
+}
+
+/* Typing Animation */
+.message-content {
+  position: relative;
+}
+
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #fff;
+  margin-left: 2px;
+  vertical-align: middle;
+}
+
+.typing-indicator {
+  display: flex;
+  gap: 4px;
+  padding-left: 8px;
+}
+
+.typing-indicator span {
+  animation: bounce 1.4s infinite ease-in-out;
+  opacity: 0.6;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); opacity: 1; }
+}
+
+/* Enhanced Loading State */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #4f4f4f;
+  border-radius: 0.5rem;
+  margin: 0 1rem;
+}
+
+/* Input Improvements */
+.input-container input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* Button Transitions */
+.send-btn, .clear-btn, .icon-btn {
+  transition: all 0.2s ease;
+}
+
+.send-btn:hover:not(:disabled),
+.clear-btn:hover,
+.icon-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+/* Better Message Header Contrast */
+.message-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 0.5rem;
 }
