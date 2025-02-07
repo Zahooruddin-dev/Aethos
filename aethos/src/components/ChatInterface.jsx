@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, Clipboard, RefreshCw, Trash2 } from 'lucide-react';
+import { Bot, Send, Clipboard, RefreshCw, Trash2, LogOut } from 'lucide-react';
 import axios from 'axios';
 import Markdown from 'react-markdown';
+import { auth } from '../firebase/firebase';
 
 const ChatApp = () => {
   const [messages, setMessages] = useState(() => {
@@ -93,15 +94,33 @@ const ChatApp = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      localStorage.removeItem('token');
+      clearHistory();
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      setError('Failed to logout. Please try again.');
+    }
+  };
+
   return (
     <div className="chat-container">
       <div className="chat-header">
         <h2>
           Mizuka Chat <Bot size={20} />
         </h2>
-        <button onClick={clearHistory} className="clear-btn">
-          <Trash2 size={18} />
-        </button>
+        
+        <div className="header-buttons">
+          <button onClick={clearHistory} className="clear-btn" title="Clear history">
+            <Trash2 size={18} />
+          </button>
+          <button onClick={handleLogout} className="logout-btn" title="Logout">
+            <LogOut size={18} />
+          </button>
+        </div>
       </div>
 
       {error && <div className="error-banner">{error}</div>}

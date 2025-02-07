@@ -1,0 +1,182 @@
+.login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: linear-gradient(135deg, #1a1f25 0%, #121518 100%);
+  color: #ffffff;
+  position: fixed;
+  inset: 0;
+}
+
+.login-container h2 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  letter-spacing: 1px;
+}
+
+.login-container form {
+  width: 90%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.03);
+  padding: 2.5rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.login-container input {
+  width: calc(100% - 32px); /* Account for padding */
+  padding: 14px 16px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  margin: 0 auto;
+}
+
+.login-container input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.login-container input:focus {
+  outline: none;
+  border-color: #20B2AA;
+  box-shadow: 0 0 0 3px rgba(32, 178, 170, 0.2);
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.login-container button {
+  width: calc(100% - 32px); /* Account for padding */
+  margin: 0 auto;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #20B2AA 0%, #1a8f89 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.login-container button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #26ccc3 0%, #20B2AA 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(32, 178, 170, 0.3);
+}
+
+.login-container button:disabled {
+  background: linear-gradient(135deg, #4a4a4a 0%, #3a3a3a 100%);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.error-message {
+  color: #ff6b6b;
+  background-color: rgba(255, 107, 107, 0.1);
+  padding: 14px 20px;
+  border-radius: 8px;
+  width: calc(100% - 40px);
+  max-width: 360px;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+  font-size: 0.95rem;
+}
+
+/* Add some decorative elements */
+.login-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #20B2AA, transparent);
+  opacity: 0.5;
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 1rem;
+  }
+
+  .login-container h2 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .login-container form {
+    padding: 1.5rem;
+    width: 100%;
+  }
+
+  .login-container input,
+  .login-container button {
+    width: 100%;
+    padding: 16px;
+    font-size: 1rem;
+  }
+}
+
+/* Handle different mobile heights */
+@media (max-height: 667px) {
+  .login-container {
+    padding: 1.5rem 1rem;
+  }
+}
+
+/* Handle notched phones */
+@supports (padding: max(0px)) {
+  .login-container {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Handle landscape mode */
+@media (max-width: 896px) and (orientation: landscape) {
+  .login-container {
+    padding: 1.5rem;
+  }
+
+  .login-container form {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+}
+
+/* Additional mobile improvements */
+@media (max-height: 600px) {
+  .login-container {
+    padding-top: 2rem;
+    min-height: auto;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-container form {
+    padding: 1.25rem;
+  }
+
+  .login-container input,
+  .login-container button {
+    padding: 14px;
+    font-size: 1rem;
+  }
+} 
