@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../../firebase/firebase';
+import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../../firebase/firebase';
 import './Login.css';
 
 const Login = () => {
@@ -20,6 +20,22 @@ const Login = () => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const token = await userCredential.user.getIdToken();
+      localStorage.setItem('token', token);
+      navigate('/');
+    } catch (error) {
+      handleError(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const result = await signInWithPopup(auth, googleProvider);
+      const token = await result.user.getIdToken();
       localStorage.setItem('token', token);
       navigate('/');
     } catch (error) {
@@ -70,6 +86,18 @@ const Login = () => {
           {isLoading ? 'Logging in...' : 'Login'}
         </button>
       </form>
+      <div className="divider">or</div>
+      <button 
+        onClick={handleGoogleSignIn} 
+        disabled={isLoading}
+        className="google-sign-in-button"
+      >
+        <img 
+          src="https://www.google.com/favicon.ico" 
+          alt="Google icon" 
+        />
+        Sign in with Google
+      </button>
     </div>
   );
 };
