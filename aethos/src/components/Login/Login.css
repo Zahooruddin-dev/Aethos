@@ -9,6 +9,20 @@
   color: #ffffff;
   position: fixed;
   inset: 0;
+  animation: gradientShift 15s ease infinite;
+  overflow: hidden;
+}
+
+@keyframes gradientShift {
+  0% {
+    background: linear-gradient(135deg, #1a1f25 0%, #121518 100%);
+  }
+  50% {
+    background: linear-gradient(135deg, #121518 0%, #1a1f25 100%);
+  }
+  100% {
+    background: linear-gradient(135deg, #1a1f25 0%, #121518 100%);
+  }
 }
 
 .login-container h2 {
@@ -31,6 +45,12 @@
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-container form:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
 }
 
 .login-container input {
@@ -43,17 +63,25 @@
   font-size: 1rem;
   transition: all 0.3s ease;
   margin: 0 auto;
+  position: relative;
+  overflow: hidden;
 }
 
 .login-container input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
 
+.login-container input:hover {
+  border-color: rgba(32, 178, 170, 0.3);
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
 .login-container input:focus {
   outline: none;
   border-color: #20B2AA;
-  box-shadow: 0 0 0 3px rgba(32, 178, 170, 0.2);
+  box-shadow: 0 0 20px rgba(32, 178, 170, 0.2);
   background-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-1px);
 }
 
 .login-container button {
@@ -70,12 +98,36 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+}
+
+.login-container button::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150%;
+  height: 150%;
+  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 60%);
+  transform: translate(-50%, -50%) scale(0);
+  transition: transform 0.5s ease-out;
+}
+
+.login-container button:hover::before {
+  transform: translate(-50%, -50%) scale(1);
 }
 
 .login-container button:hover:not(:disabled) {
   background: linear-gradient(135deg, #26ccc3 0%, #20B2AA 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(32, 178, 170, 0.3);
+  box-shadow: 0 4px 20px rgba(32, 178, 170, 0.4);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.login-container button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 10px rgba(32, 178, 170, 0.3);
 }
 
 .login-container button:disabled {
@@ -164,8 +216,13 @@
 /* Additional mobile improvements */
 @media (max-height: 600px) {
   .login-container {
-    padding-top: 2rem;
-    min-height: auto;
+    padding: 1rem;
+    justify-content: center;
+  }
+
+  .login-container form {
+    padding: 1.5rem;
+    margin: auto;
   }
 }
 
@@ -189,4 +246,38 @@
 
 .button-container button {
   flex: 1;
+}
+
+.google-sign-in-button {
+  background: linear-gradient(135deg, #4285f4 0%, #3674d7 100%) !important;
+}
+
+.google-sign-in-button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5295ff 0%, #4285f4 100%) !important;
+}
+
+.google-sign-in-button img {
+  filter: none;
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+/* Add a subtle glow effect to the container */
+.login-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(32, 178, 170, 0.1), transparent 70%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.login-container:hover::after {
+  opacity: 1;
 } 
