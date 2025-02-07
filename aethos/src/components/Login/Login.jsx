@@ -82,22 +82,22 @@ const Login = () => {
           placeholder="Password"
           required
         />
-        <button type="submit" disabled={isLoading}>
-          {isLoading ? 'Logging in...' : 'Login'}
-        </button>
+        <div className="button-container">
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? 'Logging in...' : 'Login'}
+          </button>
+          <button 
+            onClick={handleGoogleSignIn} 
+            disabled={isLoading}
+            className="google-sign-in-button"
+          >
+            <img 
+              src="https://www.google.com/favicon.ico" 
+              alt="Google icon" 
+            />
+          </button>
+        </div>
       </form>
-      <div className="divider">or</div>
-      <button 
-        onClick={handleGoogleSignIn} 
-        disabled={isLoading}
-        className="google-sign-in-button"
-      >
-        <img 
-          src="https://www.google.com/favicon.ico" 
-          alt="Google icon" 
-        />
-        Sign in with Google
-      </button>
     </div>
   );
 };
