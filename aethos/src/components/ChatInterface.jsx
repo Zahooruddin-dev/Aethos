@@ -57,11 +57,37 @@ const ChatApp = () => {
     setError('');
 
     try {
-      const response = await axios.post(
+      // First AI Response (Gemini)
+      const primaryResponse = await axios.post(
+        `${import.meta.env.VITE_OPENROUTER_API_URL}/chat/completions`,
+        {
+          model: "google/gemini-2.0-pro-exp-02-05:free",
+          messages: [{ role: 'user', content: input }],
+        },
+        {
+          headers: {
+            Authorization: `Bearer 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`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const primaryAiText = primaryResponse.data?.choices?.[0]?.message?.content || 
+                           primaryResponse.data?.result?.content || 
+                           'Could not understand response format';
+
+      // Second AI Review (Qwen)
+      const reviewPrompt = `Please review, fact-check, and enhance the following AI response while maintaining its core message. If needed, make corrections or additions to improve accuracy and completeness:
+
+${primaryAiText}
+
+Please provide your enhanced version of the response.`;
+
+      const reviewResponse = await axios.post(
         `${import.meta.env.VITE_OPENROUTER_API_URL}/chat/completions`,
         {
           model: "qwen/qwen-vl-plus:free",
-          messages: [{ role: 'user', content: input }],
+          messages: [{ role: 'user', content: reviewPrompt }],
         },
         {
           headers: {
@@ -71,13 +97,13 @@ const ChatApp = () => {
         }
       );
 
-      const aiText = response.data?.choices?.[0]?.message?.content || 
-                    response.data?.result?.content || 
-                    'Could not understand response format';
+      const finalAiText = reviewResponse.data?.choices?.[0]?.message?.content || 
+                         reviewResponse.data?.result?.content || 
+                         primaryAiText; // Fallback to primary response if review fails
 
       setMessages(prev => prev.map(msg => 
         msg.id === pendingMessage.id 
-          ? { ...msg, text: aiText, isLoading: false }
+          ? { ...msg, text: finalAiText, isLoading: false }
           : msg
       ));
 
