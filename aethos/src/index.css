@@ -155,11 +155,18 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
 }
+.clear-btn{
+  background: #bd2323;
+
+}
 
 .send-btn:hover:not(:disabled),
-.clear-btn:hover,
 .icon-btn:hover {
   background: #1e4bd8;
+  transform: translateY(-1px);
+}
+.clear-btn:hover{
+  background: #a92525;
   transform: translateY(-1px);
 }
 
