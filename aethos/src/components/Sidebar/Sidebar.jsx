@@ -3,7 +3,7 @@ import { MessageCircle, Search, X, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './Sidebar.css';
 
-const Sidebar = ({ isOpen, onClose, chatHistory }) => {
+const Sidebar = ({ isOpen, onClose, chatHistory, toggleFusionAI, isFusionAIEnabled }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const isMobile = window.innerWidth <= 772;
   
@@ -47,7 +47,22 @@ const Sidebar = ({ isOpen, onClose, chatHistory }) => {
         ))}
       </div>
 
-      <Link to="/profile" className="profile-link">
+      <div className="toggle-fusion-ai">
+        <label>
+          <input 
+            type="checkbox" 
+            checked={isFusionAIEnabled} 
+            onChange={toggleFusionAI} 
+          />
+          <span className="switch"></span>
+          Toggle Fusion AI
+        </label>
+        <span className="tooltip" data-tooltip="Switch between Fusion AI and Gemini model">
+          ?
+        </span>
+      </div>
+
+      <Link to="/profile" onClick={onClose} className="profile-link">
         <div className="profile-section">
           <User size={24} />
           <span>Profile Settings</span>
@@ -61,7 +76,9 @@ const Sidebar = ({ isOpen, onClose, chatHistory }) => {
 Sidebar.defaultProps = {
   isOpen: true, // Open by default
   onClose: () => {},
-  chatHistory: []
+  chatHistory: [],
+  toggleFusionAI: () => {},
+  isFusionAIEnabled: false
 };
 
 export default Sidebar; 
