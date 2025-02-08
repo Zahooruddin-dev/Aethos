@@ -1,22 +1,33 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebase/firebase';
 import './Register.css';
 
 const Register = () => {
+  const location = useLocation();
   const [formData, setFormData] = useState({
     firstName: '',
     middleName: '',
     lastName: '',
     username: '',
-    email: '',
+    email: location.state?.email || '',
     password: '',
     confirmPassword: ''
   });
   const [error, setError] = useState('');
+  const [message, setMessage] = useState(location.state?.message || '');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [message]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -83,6 +94,7 @@ const Register = () => {
     <div className="register-container">
       <div className="register-form">
         <h2>Create Account</h2>
+        {message && <div className="info-message">{message}</div>}
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="name-group">

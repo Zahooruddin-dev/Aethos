@@ -7,10 +7,9 @@ import './Login.css';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate();
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,7 +22,21 @@ const Login = () => {
       localStorage.setItem('token', token);
       navigate('/');
     } catch (error) {
-      handleError(error);
+      console.log('Firebase error:', error.code, error.message);
+      
+      if (error.code === 'auth/user-not-found') {
+        // Email is not registered
+        navigate('/register', { 
+          state: { 
+            email: email,
+            message: 'No account found with this email. Please register.' 
+          }
+        });
+      } else if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        setError('Incorrect password');
+      } else {
+        handleError(error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -46,7 +59,6 @@ const Login = () => {
   };
 
   const handleError = (error) => {
-    console.log('Firebase error:', error.code, error.message);
     switch (error.code) {
       case 'auth/invalid-email':
         setError('Invalid email address');
@@ -54,12 +66,8 @@ const Login = () => {
       case 'auth/user-disabled':
         setError('This account has been disabled');
         break;
-      case 'auth/user-not-found':
-      case 'auth/wrong-password':
-        setError('Invalid email or password');
-        break;
       default:
-        setError(`Login error: ${error.message}`);
+        setError('Login failed. Please try again.');
     }
   };
 

@@ -144,6 +144,28 @@
   text-align: center;
 }
 
+.info-message {
+  background: rgba(32, 178, 170, 0.1);
+  border: 1px solid rgba(32, 178, 170, 0.3);
+  color: #20B2AA;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  text-align: center;
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 600px) {
   .register-container {
     padding: 16px;
