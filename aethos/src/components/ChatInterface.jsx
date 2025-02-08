@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, Clipboard, RefreshCw, Trash2, LogOut } from 'lucide-react';
+import { Bot, Send, Clipboard, RefreshCw, Trash2, LogOut, MessageCircle, Menu, PlusCircle, FileDown } from 'lucide-react';
 import axios from 'axios';
 import Markdown from 'react-markdown';
 import { auth } from '../firebase/firebase';
+import Sidebar from './Sidebar/Sidebar';
+import { jsPDF } from 'jspdf';
 
 const ChatApp = () => {
   const [messages, setMessages] = useState(() => {
@@ -14,6 +16,7 @@ const ChatApp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     localStorage.setItem('chatHistory', JSON.stringify(messages));
@@ -132,88 +135,173 @@ Please provide your enhanced version of the response.`;
     }
   };
 
+  const startNewChat = () => {
+    // Save current chat to history if there are messages
+    if (messages.length > 0) {
+      const chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
+      chatHistory.push({
+        id: Date.now(),
+        messages: messages,
+        timestamp: new Date().toISOString()
+      });
+      localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+    }
+    
+    // Clear current messages
+    setMessages([]);
+    setInput('');
+  };
+
+  const downloadPDF = (text) => {
+    const pdf = new jsPDF();
+    
+    // Add title
+    pdf.setFontSize(16);
+    pdf.text('Chat Conversation', 20, 20);
+    
+    // Add content
+    pdf.setFontSize(12);
+    const splitText = pdf.splitTextToSize(text, 170); // Wrap text at 170 points
+    pdf.text(splitText, 20, 30);
+    
+    // Download the PDF
+    pdf.save('chat-conversation.pdf');
+  };
+
   return (
-    <div className="chat-container">
-      <div className="chat-header">
-        <h2>
-          Mizuka Chat <Bot size={20} />
-        </h2>
-        
-        <div className="header-buttons">
-          <button onClick={clearHistory} className="clear-btn" title="Clear history">
-            <Trash2 size={18} />
+    <div className="chat-layout">
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)}
+        chatHistory={messages.filter(msg => msg.sender === 'user')}
+      />
+      
+      <div className={`main-content ${!isSidebarOpen ? 'sidebar-closed' : ''}`}>
+        <div className="chat-header">
+          <button 
+            className="menu-button-header"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            data-tooltip="Toggle Sidebar"
+            aria-label="Toggle Sidebar"
+          >
+            <Menu size={24} />
           </button>
-          <button onClick={handleLogout} className="logout-btn" title="Logout">
-            <LogOut size={18} />
-          </button>
-        </div>
-      </div>
-
-      {error && <div className="error-banner">{error}</div>}
-
-      <div className="messages-list">
-        <AnimatePresence initial={false}>
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              layout
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className={`message ${msg.sender}`}
+          <h2>
+            Mizuka Chat <Bot size={20} />
+          </h2>
+          
+          <div className="header-buttons">
+            <button 
+              onClick={startNewChat} 
+              className="new-chat-btn" 
+              data-tooltip="Start New Chat"
+              aria-label="Start New Chat"
             >
-              <div className="message-header">
-                <span className="sender-tag">
-                  {msg.sender === 'user' ? 'You' : 'Mizuka'}
-                </span>
-                {msg.sender !== 'user' && !msg.isLoading && (
-                  <button
-                    onClick={() => navigator.clipboard.writeText(msg.text)}
-                    className="icon-btn"
-                  >
-                    <Clipboard size={14} />
-                  </button>
-                )}
-              </div>
-              <div className="message-content">
-                {msg.isLoading ? (
-                  <div className="loading-container">
-                    <Bot className="animate-pulse" size={16} />
-                    <motion.span
-                      className="thinking-text"
-                      animate={{ opacity: [0.4, 1, 0.4] }}
-                      transition={{
-                        repeat: Infinity,
-                        duration: 1.5,
-                        ease: "linear"
-                      }}
-                    >
-                      thinking...
-                    </motion.span>
-                  </div>
-                ) : (
-                  <Markdown>{msg.text}</Markdown>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        <div ref={messagesEndRef} />
-      </div>
+              <PlusCircle size={18} />
+            </button>
+            <button 
+              onClick={clearHistory} 
+              className="clear-btn" 
+              data-tooltip="Clear Chat History"
+              aria-label="Clear Chat History"
+            >
+              <Trash2 size={18} />
+            </button>
+            <button 
+              onClick={handleLogout} 
+              className="logout-btn" 
+              data-tooltip="Logout"
+              aria-label="Logout"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
+        </div>
 
-      <form onSubmit={sendMessage} className="input-container">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          disabled={isLoading}
-        />
-        <button type="submit" disabled={isLoading} className="send-btn">
-          {isLoading ? <RefreshCw className="animate-spin" /> : <Send />}
-        </button>
-      </form>
+        {error && <div className="error-banner">{error}</div>}
+
+        <div className="messages-list">
+          <AnimatePresence initial={false}>
+            {messages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className={`message ${msg.sender}`}
+              >
+                <div className="message-header">
+                  <span className="sender-tag">
+                    {msg.sender === 'user' ? 'You' : 'Mizuka'}
+                  </span>
+                  {msg.sender !== 'user' && !msg.isLoading && (
+                    <div className="message-actions">
+                      <button
+                        onClick={() => navigator.clipboard.writeText(msg.text)}
+                        className="icon-btn"
+                        data-tooltip="Copy to Clipboard"
+                        aria-label="Copy to Clipboard"
+                      >
+                        <Clipboard size={14} />
+                      </button>
+                      <button
+                        onClick={() => downloadPDF(msg.text)}
+                        className="icon-btn"
+                        data-tooltip="Download as PDF"
+                        aria-label="Download as PDF"
+                      >
+                        <FileDown size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="message-content">
+                  {msg.isLoading ? (
+                    <div className="loading-container">
+                      <Bot className="animate-pulse" size={16} />
+                      <motion.span
+                        className="thinking-text"
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{
+                          repeat: Infinity,
+                          duration: 1.5,
+                          ease: "linear"
+                        }}
+                      >
+                        thinking...
+                      </motion.span>
+                    </div>
+                  ) : (
+                    <Markdown>{msg.text}</Markdown>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <div ref={messagesEndRef} />
+        </div>
+
+        <form onSubmit={sendMessage} className="input-container">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type your message..."
+            disabled={isLoading}
+          />
+          <button 
+            type="submit" 
+            disabled={isLoading} 
+            className="send-btn"
+            data-tooltip="Send Message"
+            aria-label="Send Message"
+          >
+            {isLoading ? <RefreshCw className="animate-spin" /> : <Send />}
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
