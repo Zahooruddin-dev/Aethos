@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../../firebase/firebase';
 import './Login.css';
@@ -98,6 +98,10 @@ const Login = () => {
           </button>
         </div>
       </form>
+      <div className="auth-links">
+        <Link to="/forgot-password" className="forgot-password-link">Forgot Password?</Link>
+        <p>Don't have an account? <Link to="/register">Register</Link></p>
+      </div>
     </div>
   );
 };

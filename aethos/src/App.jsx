@@ -4,6 +4,8 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import Login from './components/Login/Login';
 import AuthRequired from './Auth/AuthRequired';
 import { Navigate } from 'react-router-dom';
+import Register from './components/Register/Register';
+import ForgotPassword from './components/ForgotPassword/ForgotPassword';
 
 // Add new guard component
 const RedirectIfAuthenticated = ({ children }) => {
@@ -37,6 +39,8 @@ function App() {
 						</RedirectIfAuthenticated>
 					} 
 				/>
+				<Route path="/register" element={<Register />} />
+				<Route path="/forgot-password" element={<ForgotPassword />} />
 			</Routes>
 		</BrowserRouter>
 	)
