@@ -23,7 +23,11 @@ const ChatApp = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [responseTimer, setResponseTimer] = useState(0);
   const timerRef = useRef(null);
-  const [isFusionAIEnabled, setIsFusionAIEnabled] = useState(true); // Default to true
+  const [isFusionAIEnabled, setIsFusionAIEnabled] = useState(true);
+  const [chatSessions, setChatSessions] = useState(() => {
+    const saved = localStorage.getItem('chatSessions');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   useEffect(() => {
     localStorage.setItem('chatHistory', JSON.stringify(messages));
@@ -69,6 +73,80 @@ const ChatApp = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const toggleFusionAI = () => {
+    setIsFusionAIEnabled(prev => !prev);
+  };
+
+  const callGeminiModel = async (input) => {
+    try {
+      const response = await fetch(import.meta.env.VITE_OPENROUTER_API_URL + '/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+          'HTTP-Referer': window.location.href,
+          'X-Title': 'Mizuka Chat'
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-pro',
+          messages: [
+            {
+              role: 'user',
+              content: input
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error('Gemini API Error:', error);
+      throw new Error('Failed to get response from Gemini');
+    }
+  };
+
+  const callFusionModel = async (input) => {
+    try {
+      const response = await fetch(import.meta.env.VITE_OPENROUTER_API_URL + '/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+          'HTTP-Referer': window.location.href,
+          'X-Title': 'Mizuka Chat'
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-3-opus',  // Using Claude for enhancement
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an AI assistant that improves and fact-checks responses. Review the following response and enhance it with additional information, corrections, or clarifications where necessary.'
+            },
+            {
+              role: 'user',
+              content: `Please review and enhance this response: ${input}`
+            }
+          ]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error('Fusion API Error:', error);
+      throw new Error('Failed to get response from Fusion');
+    }
+  };
+
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -88,62 +166,42 @@ const ChatApp = () => {
     startResponseTimer();
 
     try {
-      // First AI Response (Gemini)
-      const primaryResponse = await axios.post(
-        `${import.meta.env.VITE_OPENROUTER_API_URL}/chat/completions`,
-        {
-          model: "google/gemini-2.0-pro-exp-02-05:free",
-          messages: [{ role: 'user', content: input }],
-        },
-        {
-          headers: {
-            Authorization: `Bearer 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`,
-            'Content-Type': 'application/json',
-          },
+      let finalAiText = '';
+
+      if (isFusionAIEnabled) {
+        try {
+          // First get Gemini response
+          const geminiResponse = await callGeminiModel(input);
+          
+          // Then enhance with Fusion
+          try {
+            const fusionResponse = await callFusionModel(geminiResponse);
+            finalAiText = fusionResponse;
+          } catch (fusionError) {
+            console.error('Fusion enhancement failed:', fusionError);
+            // If Fusion fails, still use Gemini's response
+            finalAiText = geminiResponse;
+          }
+        } catch (error) {
+          throw error;
         }
-      );
-
-      const primaryAiText = primaryResponse.data?.choices?.[0]?.message?.content || 
-                           primaryResponse.data?.result?.content || 
-                           'Could not understand response format';
-
-      // Second AI Review (Qwen)
-      const reviewPrompt = `Please review, fact-check, and enhance the following AI response while maintaining its core message. If needed, make corrections or additions to improve accuracy and completeness:
-
-${primaryAiText}
-
-Please provide your enhanced version of the response.`;
-
-      const reviewResponse = await axios.post(
-        `${import.meta.env.VITE_OPENROUTER_API_URL}/chat/completions`,
-        {
-          model: "qwen/qwen-vl-plus:free",
-          messages: [{ role: 'user', content: reviewPrompt }],
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      const finalAiText = reviewResponse.data?.choices?.[0]?.message?.content || 
-                         reviewResponse.data?.result?.content || 
-                         primaryAiText; // Fallback to primary response if review fails
+      } else {
+        // Only Gemini
+        finalAiText = await callGeminiModel(input);
+      }
 
       setMessages(prev => prev.map(msg => 
         msg.id === pendingMessage.id 
           ? { ...msg, text: finalAiText, isLoading: false }
           : msg
       ));
-
     } catch (error) {
-      handleError(error);
+      console.error('Chat error:', error);
+      setError(error.message || 'Failed to get response. Please try again.');
       setMessages(prev => prev.filter(msg => msg.id !== pendingMessage.id));
       setMessages(prev => [...prev, {
         id: Date.now() + 2,
-        text: 'Failed to get response. Please check your connection.',
+        text: error.message || 'Failed to get response. Please try again.',
         sender: 'system',
       }]);
     } finally {
@@ -167,13 +225,25 @@ Please provide your enhanced version of the response.`;
   const startNewChat = () => {
     // Save current chat to history if there are messages
     if (messages.length > 0) {
-      const chatHistory = JSON.parse(localStorage.getItem('chatHistory') || '[]');
-      chatHistory.push({
-        id: Date.now(),
-        messages: messages,
-        timestamp: new Date().toISOString()
-      });
-      localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+        const currentTime = new Date();
+        const chatSession = {
+            id: Date.now(),
+            messages: messages,
+            timestamp: currentTime.toISOString(),
+            title: messages[0]?.text.substring(0, 30) + '...' || 'New Chat'
+        };
+
+        // Get existing chats from localStorage
+        const existingChats = JSON.parse(localStorage.getItem('chatSessions') || '[]');
+        
+        // Add new chat session
+        const updatedChats = [chatSession, ...existingChats];
+        
+        // Keep only last 10 chat sessions
+        const limitedChats = updatedChats.slice(0, 10);
+        
+        // Save to localStorage
+        localStorage.setItem('chatSessions', JSON.stringify(limitedChats));
     }
     
     // Clear current messages
@@ -207,80 +277,62 @@ Please provide your enhanced version of the response.`;
         pdf.setTextColor(100);
         pdf.text(new Date().toLocaleString(), pageWidth / 2, margin + 7, { align: 'center' });
 
-        // Process the markdown text
-        // Split content into chunks that can fit on a page
-        const splitText = pdf.splitTextToSize(text, usableWidth);
+        // Create a temporary div for markdown rendering
+        const tempDiv = document.createElement('div');
+        tempDiv.className = 'pdf-markdown-content';
+        document.body.appendChild(tempDiv);
+
+        // Render markdown content
+        const root = ReactDOM.createRoot(tempDiv);
+        root.render(
+            <div className="pdf-content">
+                <ReactMarkdown>{text}</ReactMarkdown>
+            </div>
+        );
+
+        // Wait for rendering
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // Convert markdown content to canvas
+        const canvas = await html2canvas(tempDiv, {
+            scale: 2,
+            logging: false,
+            useCORS: true,
+            backgroundColor: '#ffffff'
+        });
+
+        // Clean up temporary div
+        document.body.removeChild(tempDiv);
+
+        // Calculate dimensions
+        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+        const imgWidth = usableWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
         
-        // Calculate lines per page (accounting for header and margins)
-        const lineHeight = 7; // Height per line in mm
-        const linesPerPage = Math.floor((pageHeight - (margin * 2) - 20) / lineHeight); // 20mm for header
+        let heightLeft = imgHeight;
+        let position = margin + 20; // Start after header
+        let page = 1;
 
-        // Add content pages
-        let currentLine = 0;
-        let pageNum = 1;
+        // Add first page content
+        pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
+        heightLeft -= (pageHeight - position - margin);
 
-        while (currentLine < splitText.length) {
-            if (pageNum > 1) {
-                pdf.addPage();
-            }
-
-            // Content starting position (after header on first page)
-            let yPosition = margin + (pageNum === 1 ? 20 : 10);
-
-            // Add content for this page
-            for (let i = 0; i < linesPerPage && currentLine < splitText.length; i++) {
-                if (splitText[currentLine].trim()) { // Only add non-empty lines
-                    pdf.text(splitText[currentLine], margin, yPosition);
-                    yPosition += lineHeight;
-                }
-                currentLine++;
-            }
-
-            // Add page number at bottom
-            pdf.setFontSize(10);
-            pdf.text(
-                `Page ${pageNum}`,
-                pageWidth / 2,
-                pageHeight - margin,
-                { align: 'center' }
-            );
-
-            pageNum++;
-        }
-
-        // Add code blocks with different styling
-        pdf.setFont('Courier', 'normal');
-        const codeBlocks = text.match(/```[\s\S]*?```/g) || [];
-        if (codeBlocks.length > 0) {
+        // Add additional pages if needed
+        while (heightLeft > 0) {
             pdf.addPage();
-            pdf.setFontSize(14);
-            pdf.text('Code Blocks', margin, margin);
+            page++;
+            position = margin;
+            pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight, '', 'FAST', 0, -(pageHeight - margin - 20) * (page - 1));
+            heightLeft -= (pageHeight - margin * 2);
             
-            let yPos = margin + 10;
-            codeBlocks.forEach((block) => {
-                const code = block.replace(/```/g, '').trim();
-                const codeLines = pdf.splitTextToSize(code, usableWidth);
-                
-                // Add background for code block
-                pdf.setFillColor(245, 245, 245);
-                pdf.rect(
-                    margin - 2,
-                    yPos - 2,
-                    usableWidth + 4,
-                    (codeLines.length * lineHeight) + 4,
-                    'F'
-                );
-                
-                // Add code text
-                pdf.setTextColor(40);
-                codeLines.forEach((line) => {
-                    pdf.text(line, margin, yPos);
-                    yPos += lineHeight;
-                });
-                
-                yPos += 10; // Space between code blocks
-            });
+            // Add page number
+            pdf.setFontSize(10);
+            pdf.text(`Page ${page}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
         }
+
+        // Add page number to first page
+        pdf.setPage(1);
+        pdf.text(`Page 1 of ${page}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
 
         // Save the PDF
         pdf.save(`chat-conversation-${messageId}.pdf`);
@@ -288,10 +340,6 @@ Please provide your enhanced version of the response.`;
     } catch (error) {
         console.error('PDF generation failed:', error);
     }
-  };
-
-  const toggleFusionAI = () => {
-    setIsFusionAIEnabled(prev => !prev);
   };
 
   return (

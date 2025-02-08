@@ -13,6 +13,10 @@
   transition: all 0.3s ease;
   opacity: 1;
   visibility: visible;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
 .sidebar.closed {
