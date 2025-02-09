@@ -47,6 +47,7 @@ const ChatApp = () => {
 	const [selectedPersonality, setSelectedPersonality] = useState('default');
 	const [selectedLanguage, setSelectedLanguage] = useState('en');
 	const [pinnedMessages, setPinnedMessages] = useState([]);
+	const abortController = useRef(null); // Create a ref to hold the AbortController
 
 	const languageOptions = [
 		{ value: 'en', label: 'English' },
@@ -248,6 +249,9 @@ const ChatApp = () => {
 	};
 
 	const getAIResponse = async (input) => {
+		abortController.current = new AbortController(); // Initialize the AbortController
+		const signal = abortController.current.signal; // Get the signal for the fetch request
+
 		try {
 			console.log('Sending request with input:', input); // Debug log
 
@@ -270,6 +274,7 @@ const ChatApp = () => {
 							},
 						],
 					}),
+					signal, // Pass the signal to the fetch request
 				}
 			);
 
@@ -288,8 +293,12 @@ const ChatApp = () => {
 
 			return data.choices[0].message.content;
 		} catch (error) {
-			console.error('AI Response error:', error);
-			throw new Error('Failed to get AI response');
+			if (error.name === 'AbortError') {
+				console.log('Fetch aborted'); // Handle fetch abort
+			} else {
+				console.error('AI Response error:', error);
+				throw new Error('Failed to get AI response');
+			}
 		}
 	};
 
@@ -577,6 +586,15 @@ const ChatApp = () => {
 		setPinnedMessages((prev) => prev.filter((id) => id !== messageId)); // Unpin the message
 	};
 
+	const stopSearch = () => {
+		// Logic to stop the ongoing search
+		if (abortController.current) {
+			abortController.current.abort(); // Abort the fetch request
+		}
+		stopResponseTimer(); // Stop the response timer if applicable
+		setIsLoading(false); // Set loading state to false
+	};
+
 	return (
 		<div className='chat-layout'>
 			<Sidebar
@@ -736,11 +754,11 @@ const ChatApp = () => {
 						disabled={isLoading}
 					/>
 					<button
-						type='submit'
-						disabled={isLoading}
+						type='button'
 						className='send-btn'
 						data-tooltip='Send Message'
 						aria-label='Send Message'
+						onClick={isLoading ? stopSearch : sendMessage}
 					>
 						{isLoading ? <RefreshCw className='animate-spin' /> : <Send />}
 					</button>
