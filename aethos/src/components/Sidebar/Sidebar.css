@@ -206,7 +206,7 @@
 }
 
 .toggle-fusion-ai input:checked + .switch {
-  background-color: #4caf50; /* Color when toggled on */
+  background-color: #4cafac; /* Color when toggled on */
 }
 
 .toggle-fusion-ai input:checked + .switch:before {
@@ -259,4 +259,11 @@
 
 .pinned-chat-item:hover {
     background: rgba(255, 255, 255, 0.3);
+} 
+.unpin-btn {
+  background: none;
+  border: none;
+  color: rgb(122, 243, 210);
+  cursor: pointer;
+  padding: 0.5rem;
 } 

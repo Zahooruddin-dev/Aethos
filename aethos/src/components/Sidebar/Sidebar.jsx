@@ -68,25 +68,28 @@ const Sidebar = ({
           </div>
         ))}
       </div>
-
       <div className="pinned-chats">
-        <h3>Pinned Chats</h3>
-        {pinnedMessages.length === 0 ? (
-          <p>No pinned messages.</p>
-        ) : (
-          pinnedMessages.map((messageId) => {
-            const message = messages.find(msg => msg.id === messageId);
-            return (
-              <div key={messageId} className="pinned-chat-item">
-                <span>{message.text}</span>
-                <button onClick={() => unpinMessage(messageId)} className="unpin-btn">
-                  <Pin size={16} />
-                </button>
-              </div>
-            );
-          })
-        )}
-      </div>
+  <h3>Pinned Chats</h3>
+  {pinnedMessages.length === 0 ? (
+    <p>No pinned messages.</p>
+  ) : (
+    pinnedMessages.map((messageId) => {
+      const message = messages.find(msg => msg.id === messageId);
+      // Split the message text into words and take first 5
+      const firstFiveWords = message.text.split(' ').slice(0, 5).join(' ');
+      const hasMoreWords = message.text.split(' ').length > 5;
+      
+      return (
+        <div key={messageId} className="pinned-chat-item">
+          <span>{firstFiveWords}{hasMoreWords ? '...' : ''}</span>
+          <button onClick={() => unpinMessage(messageId)} className="unpin-btn">
+            <Pin size={16} />
+          </button>
+        </div>
+      );
+    })
+  )}
+</div>
 
       <div className="toggle-fusion-ai">
         <label>
