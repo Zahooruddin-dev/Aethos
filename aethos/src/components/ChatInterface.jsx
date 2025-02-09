@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Send, Clipboard, RefreshCw, Trash2, LogOut, MessageCircle, Menu, PlusCircle, FileDown, Timer } from 'lucide-react';
+import { Bot, Send, Clipboard, RefreshCw, Trash2, LogOut, MessageCircle, Menu, PlusCircle, FileDown, Timer, Pin } from 'lucide-react';
 import axios from 'axios';
 import Markdown from 'react-markdown';
 import { auth } from '../firebase/firebase';
@@ -28,6 +28,22 @@ const ChatApp = () => {
     const saved = localStorage.getItem('chatSessions');
     return saved ? JSON.parse(saved) : [];
   });
+  const [selectedPersonality, setSelectedPersonality] = useState('default');
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [pinnedChats, setPinnedChats] = useState([]);
+
+  const languageOptions = [
+    { value: 'en', label: 'English' },
+    { value: 'es', label: 'Spanish' },
+    { value: 'fr', label: 'French' },
+    { value: 'de', label: 'German' },
+    { value: 'it', label: 'Italian' },
+    { value: 'pt', label: 'Portuguese' },
+    { value: 'ru', label: 'Russian' },
+    { value: 'ja', label: 'Japanese' },
+    { value: 'ko', label: 'Korean' },
+    { value: 'zh', label: 'Chinese' }
+  ];
 
   useEffect(() => {
     localStorage.setItem('chatHistory', JSON.stringify(messages));
@@ -147,66 +163,156 @@ const ChatApp = () => {
     }
   };
 
+  const translateText = async (text, targetLanguage) => {
+    try {
+        const response = await fetch(import.meta.env.VITE_OPENROUTER_API_URL + '/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+                'HTTP-Referer': window.location.href,
+                'X-Title': 'Mizuka Chat'
+            },
+            body: JSON.stringify({
+                model: 'qwen/qwen2.5-vl-72b-instruct:free',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are a translation assistant. Translate the following text to ${targetLanguage}. Only respond with the translation, nothing else.`
+                    },
+                    {
+                        role: 'user',
+                        content: text
+                    }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error('Translation API Error Response:', errorData);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error('Invalid response format from Translation API');
+        }
+
+        return data.choices[0].message.content;
+    } catch (error) {
+        console.error('Translation error:', error);
+        return text; // Return original text if translation fails
+    }
+  };
+
+  const getAIResponse = async (input) => {
+    try {
+        console.log('Sending request with input:', input); // Debug log
+        
+        const response = await fetch(import.meta.env.VITE_OPENROUTER_API_URL + '/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`, // Use OpenRouter API key
+                'HTTP-Referer': window.location.href,
+                'X-Title': 'Mizuka Chat'
+            },
+            body: JSON.stringify({
+                model: 'google/gemini-2.0-pro-exp-02-05:free',
+                messages: [
+                    {
+                        role: 'user',
+                        content: input
+                    }
+                ]
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error('API Error Response:', errorData); // Debug log
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('API Response:', data); // Debug log
+
+        if (!data || !data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error('Invalid response format from API');
+        }
+
+        return data.choices[0].message.content;
+    } catch (error) {
+        console.error('AI Response error:', error);
+        throw new Error('Failed to get AI response');
+    }
+  };
+
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    const userMessage = { id: Date.now(), text: input, sender: 'user' };
-    const pendingMessage = { 
-      id: Date.now() + 1, 
-      text: '', 
-      sender: 'ai', 
-      isLoading: true 
-    };
-
-    setMessages(prev => [...prev, userMessage, pendingMessage]);
-    setInput('');
-    setIsLoading(true);
-    setError('');
-    startResponseTimer();
-
     try {
-      let finalAiText = '';
+        setIsLoading(true);
+        setError(''); // Clear any previous errors
+        
+        const userMessage = {
+            id: Date.now(),
+            text: input,
+            sender: 'user'
+        };
 
-      if (isFusionAIEnabled) {
-        try {
-          // First get Gemini response
-          const geminiResponse = await callGeminiModel(input);
-          
-          // Then enhance with Fusion
-          try {
-            const fusionResponse = await callFusionModel(geminiResponse);
-            finalAiText = fusionResponse;
-          } catch (fusionError) {
-            console.error('Fusion enhancement failed:', fusionError);
-            // If Fusion fails, still use Gemini's response
-            finalAiText = geminiResponse;
-          }
-        } catch (error) {
-          throw error;
+        // Add loading message
+        const loadingMessage = {
+            id: Date.now() + 1,
+            sender: 'ai',
+            isLoading: true
+        };
+
+        setMessages(prev => [...prev, userMessage, loadingMessage]);
+        setInput('');
+        startResponseTimer(); // Start the timer for response
+
+        let processedInput = input;
+        if (selectedLanguage !== 'en') {
+            try {
+                const translatedToEnglish = await translateText(input, 'English');
+                processedInput = translatedToEnglish;
+            } catch (error) {
+                console.error('Translation to English failed:', error);
+            }
         }
-      } else {
-        // Only Gemini
-        finalAiText = await callGeminiModel(input);
-      }
 
-      setMessages(prev => prev.map(msg => 
-        msg.id === pendingMessage.id 
-          ? { ...msg, text: finalAiText, isLoading: false }
-          : msg
-      ));
+        const aiResponse = await getAIResponse(processedInput);
+
+        let finalResponse = aiResponse;
+        if (selectedLanguage !== 'en') {
+            try {
+                finalResponse = await translateText(aiResponse, selectedLanguage);
+            } catch (error) {
+                console.error('Translation of response failed:', error);
+            }
+        }
+
+        // Replace loading message with actual response
+        setMessages(prev => prev.map(msg => 
+            msg.isLoading ? {
+                id: Date.now() + 1,
+                text: finalResponse,
+                sender: 'ai'
+            } : msg
+        ));
+
     } catch (error) {
-      console.error('Chat error:', error);
-      setError(error.message || 'Failed to get response. Please try again.');
-      setMessages(prev => prev.filter(msg => msg.id !== pendingMessage.id));
-      setMessages(prev => [...prev, {
-        id: Date.now() + 2,
-        text: error.message || 'Failed to get response. Please try again.',
-        sender: 'system',
-      }]);
+        console.error('Error in sendMessage:', error);
+        setError('Failed to get response. Please try again.');
+        // Remove loading message if there's an error
+        setMessages(prev => prev.filter(msg => !msg.isLoading));
     } finally {
-      setIsLoading(false);
-      stopResponseTimer();
+        setIsLoading(false);
+        stopResponseTimer(); // Stop the timer when response is received
     }
   };
 
@@ -342,6 +448,59 @@ const ChatApp = () => {
     }
   };
 
+  const saveChatHistory = (messages) => {
+    const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+    chatHistory.push({ timestamp: new Date(), messages });
+    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+  };
+
+  // Call this function when a chat session ends
+  const endChatSession = () => {
+    saveChatHistory(messages);
+  };
+
+  const handlePersonalityChange = (e) => {
+    setSelectedPersonality(e.target.value);
+  };
+
+  const startVoiceRecognition = () => {
+    const recognition = new window.SpeechRecognition();
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(transcript); // Set the input state to the recognized text
+    };
+    recognition.start();
+  };
+
+  const speakResponse = (text) => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const fetchSearchResults = async (query) => {
+    const response = await fetch(`https://api.example.com/search?q=${query}`);
+    const data = await response.json();
+    return data.results; // Adjust based on your API response structure
+  };
+
+  const summarizeText = async (text) => {
+    const response = await fetch('https://api.example.com/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+    });
+    const data = await response.json();
+    return data.summary; // Adjust based on your API response structure
+  };
+
+  const handleLanguageChange = (e) => {
+    setSelectedLanguage(e.target.value);
+  };
+
+  const pinChat = (chatId) => {
+    setPinnedChats((prev) => [...prev, chatId]);
+  };
+
   return (
     <div className="chat-layout">
       <Sidebar 
@@ -350,6 +509,7 @@ const ChatApp = () => {
         chatHistory={messages.filter(msg => msg.sender === 'user')}
         toggleFusionAI={toggleFusionAI}
         isFusionAIEnabled={isFusionAIEnabled}
+        pinnedChats={pinnedChats}
       />
       
       <div className={`main-content ${!isSidebarOpen ? 'sidebar-closed' : ''}`}>
@@ -460,23 +620,45 @@ const ChatApp = () => {
         </div>
 
         <form onSubmit={sendMessage} className="input-container">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Type your message..."
-            disabled={isLoading}
-          />
-          <button 
-            type="submit" 
-            disabled={isLoading} 
-            className="send-btn"
-            data-tooltip="Send Message"
-            aria-label="Send Message"
-          >
-            {isLoading ? <RefreshCw className="animate-spin" /> : <Send />}
-          </button>
-        </form>
+  <div className="selectors-container">
+    <select className="personality-selector" onChange={handlePersonalityChange}>
+      <option value="default">Default AI</option>
+      <option value="friendly">Friendly AI</option>
+      <option value="professional">Professional AI</option>
+    </select>
+    <select 
+        className="language-selector" 
+        value={selectedLanguage}
+        onChange={(e) => setSelectedLanguage(e.target.value)}
+    >
+        {languageOptions.map(option => (
+            <option key={option.value} value={option.value}>
+                {option.label}
+            </option>
+        ))}
+    </select>
+  </div>
+  
+  <input
+    type="text"
+    value={input}
+    onChange={(e) => setInput(e.target.value)}
+    placeholder="Type your message..."
+    disabled={isLoading}
+  />
+  <button 
+    type="submit" 
+    disabled={isLoading} 
+    className="send-btn"
+    data-tooltip="Send Message"
+    aria-label="Send Message"
+  >
+    {isLoading ? <RefreshCw className="animate-spin" /> : <Send />}
+  </button>
+</form>
+
+
+       
       </div>
     </div>
   );

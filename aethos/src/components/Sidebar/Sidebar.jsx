@@ -21,6 +21,8 @@ const Sidebar = ({ isOpen, onClose, chatHistory, toggleFusionAI, isFusionAIEnabl
       )
     : safeHistory;
 
+  const [pinnedChats, setPinnedChats] = useState([]);
+
   return (
     <div className={sidebarClassName}>
       <div className="sidebar-header">
@@ -43,6 +45,15 @@ const Sidebar = ({ isOpen, onClose, chatHistory, toggleFusionAI, isFusionAIEnabl
           <div key={chat?.id || Math.random()} className="chat-item">
             <MessageCircle size={20} />
             <span>{(chat?.text || '').substring(0, 50)}{chat?.text?.length > 50 ? '...' : ''}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="pinned-chats">
+        <h3>Pinned Chats</h3>
+        {pinnedChats.map((chatId) => (
+          <div key={chatId} className="pinned-chat-item">
+            {/* Render chat details */}
           </div>
         ))}
       </div>
