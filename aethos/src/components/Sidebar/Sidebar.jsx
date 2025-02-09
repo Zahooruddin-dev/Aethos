@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
-import { MessageCircle, Search, X, User } from 'lucide-react';
+import { MessageCircle, Search, X, User, Pin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import './Sidebar.css';
 
-const Sidebar = ({ isOpen, onClose, chatHistory, toggleFusionAI, isFusionAIEnabled }) => {
+const Sidebar = ({ 
+  isOpen = true,
+  onClose = () => {},
+  chatHistory = [],
+  toggleFusionAI = () => {},
+  isFusionAIEnabled = false,
+  pinnedMessages = [],
+  setPinnedMessages = () => {},
+  messages = []
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const isMobile = window.innerWidth <= 772;
   
@@ -21,7 +30,18 @@ const Sidebar = ({ isOpen, onClose, chatHistory, toggleFusionAI, isFusionAIEnabl
       )
     : safeHistory;
 
-  const [pinnedChats, setPinnedChats] = useState([]);
+  const pinMessage = (messageId) => {
+    setPinnedMessages((prev) => {
+      if (prev.includes(messageId)) {
+        return prev.filter(id => id !== messageId);
+      }
+      return [...prev, messageId];
+    });
+  };
+
+  const unpinMessage = (messageId) => {
+    setPinnedMessages((prev) => prev.filter(id => id !== messageId));
+  };
 
   return (
     <div className={sidebarClassName}>
@@ -51,11 +71,21 @@ const Sidebar = ({ isOpen, onClose, chatHistory, toggleFusionAI, isFusionAIEnabl
 
       <div className="pinned-chats">
         <h3>Pinned Chats</h3>
-        {pinnedChats.map((chatId) => (
-          <div key={chatId} className="pinned-chat-item">
-            {/* Render chat details */}
-          </div>
-        ))}
+        {pinnedMessages.length === 0 ? (
+          <p>No pinned messages.</p>
+        ) : (
+          pinnedMessages.map((messageId) => {
+            const message = messages.find(msg => msg.id === messageId);
+            return (
+              <div key={messageId} className="pinned-chat-item">
+                <span>{message.text}</span>
+                <button onClick={() => unpinMessage(messageId)} className="unpin-btn">
+                  <Pin size={16} />
+                </button>
+              </div>
+            );
+          })
+        )}
       </div>
 
       <div className="toggle-fusion-ai">
@@ -63,7 +93,7 @@ const Sidebar = ({ isOpen, onClose, chatHistory, toggleFusionAI, isFusionAIEnabl
           <input 
             type="checkbox" 
             checked={isFusionAIEnabled} 
-            onChange={toggleFusionAI} 
+            onChange={(e) => toggleFusionAI(e.target.checked)}
           />
           <span className="switch"></span>
           Toggle Fusion AI
@@ -81,15 +111,6 @@ const Sidebar = ({ isOpen, onClose, chatHistory, toggleFusionAI, isFusionAIEnabl
       </Link>
     </div>
   );
-};
-
-// Update default props
-Sidebar.defaultProps = {
-  isOpen: true, // Open by default
-  onClose: () => {},
-  chatHistory: [],
-  toggleFusionAI: () => {},
-  isFusionAIEnabled: false
 };
 
 export default Sidebar; 

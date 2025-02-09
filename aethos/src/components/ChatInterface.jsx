@@ -30,7 +30,7 @@ const ChatApp = () => {
   });
   const [selectedPersonality, setSelectedPersonality] = useState('default');
   const [selectedLanguage, setSelectedLanguage] = useState('en');
-  const [pinnedChats, setPinnedChats] = useState([]);
+  const [pinnedMessages, setPinnedMessages] = useState([]);
 
   const languageOptions = [
     { value: 'en', label: 'English' },
@@ -497,8 +497,17 @@ const ChatApp = () => {
     setSelectedLanguage(e.target.value);
   };
 
-  const pinChat = (chatId) => {
-    setPinnedChats((prev) => [...prev, chatId]);
+  const pinMessage = (messageId) => {
+    setPinnedMessages((prev) => {
+        if (prev.includes(messageId)) {
+            return prev.filter(id => id !== messageId); // Unpin if already pinned
+        }
+        return [...prev, messageId]; // Pin the message
+    });
+  };
+
+  const unpinMessage = (messageId) => {
+    setPinnedMessages((prev) => prev.filter(id => id !== messageId)); // Unpin the message
   };
 
   return (
@@ -506,10 +515,11 @@ const ChatApp = () => {
       <Sidebar 
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
-        chatHistory={messages.filter(msg => msg.sender === 'user')}
+        messages={messages}
+        pinnedMessages={pinnedMessages}
+        setPinnedMessages={setPinnedMessages}
         toggleFusionAI={toggleFusionAI}
         isFusionAIEnabled={isFusionAIEnabled}
-        pinnedChats={pinnedChats}
       />
       
       <div className={`main-content ${!isSidebarOpen ? 'sidebar-closed' : ''}`}>
@@ -589,6 +599,14 @@ const ChatApp = () => {
                         aria-label="Download as PDF"
                       >
                         <FileDown size={14} />
+                      </button>
+                      <button
+                        onClick={() => pinMessage(msg.id)}
+                        className="icon-btn"
+                        data-tooltip="Pin Message"
+                        aria-label="Pin Message"
+                      >
+                        <Pin size={14} />
                       </button>
                     </div>
                   )}
