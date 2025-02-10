@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .env
 .env.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -26,3 +27,6 @@ dist-ssr
 
 aethos/.env
 aethos/.env.local
+
+# Ignore .env file
+.env
