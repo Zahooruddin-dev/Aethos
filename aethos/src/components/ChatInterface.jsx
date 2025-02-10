@@ -6,26 +6,27 @@ import {
 	Clipboard,
 	RefreshCw,
 	Trash2,
-	LogOut,
-	MessageCircle,
 	Menu,
 	PlusCircle,
-	FileDown,
-	Timer,
 	Pin,
 } from 'lucide-react';
-import axios from 'axios';
+
 import Markdown from 'react-markdown';
-import { auth } from '../firebase/firebase';
 import Sidebar from './Sidebar/Sidebar';
-import { jsPDF } from 'jspdf';
 import 'jspdf-autotable'; // For better text handling
-import ReactDOM from 'react-dom/client';
-import html2canvas from 'html2canvas';
-import ReactMarkdown from 'react-markdown';
+import PDFDownloader from './PDFDownloader'; // Import the new component
+import LogoutButton from './LogoutButton'; // Import the new component
+import NewChatButton from './NewChatButton'; // Import the new component
+import callGeminiModel from './GeminiAPI'; // Import the new function
+import translateText from '../api/TranslationAPI'; // Import the new function
+import callFusionModel from '../api/FusionModelAPI'; // Import the new function
+import { pinMessage } from '../utils/MessageUtils'; // Import the new function
+import MessageSender from './MessageSender.jsx'; // Import the new component
+import { stopSearch } from '../utils/SearchController'; // Import the new function
+import { languageOptions } from '../utils/LanguageOptions'; // Import the new language options
+import useResponseTimer from '../hooks/useResponseTimer'; // Import the custom hook
 
 // Global cache for translations to avoid redundant API calls.
-const translationCache = new Map();
 
 const ChatApp = () => {
 	const [messages, setMessages] = useState(() => {
@@ -37,8 +38,6 @@ const ChatApp = () => {
 	const [error, setError] = useState('');
 	const messagesEndRef = useRef(null);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-	const [responseTimer, setResponseTimer] = useState(0);
-	const timerRef = useRef(null);
 	const [isFusionAIEnabled, setIsFusionAIEnabled] = useState(true);
 	const [chatSessions, setChatSessions] = useState(() => {
 		const saved = localStorage.getItem('chatSessions');
@@ -49,18 +48,8 @@ const ChatApp = () => {
 	const [pinnedMessages, setPinnedMessages] = useState([]);
 	const abortController = useRef(null); // Create a ref to hold the AbortController
 
-	const languageOptions = [
-		{ value: 'en', label: 'English' },
-		{ value: 'es', label: 'Spanish' },
-		{ value: 'fr', label: 'French' },
-		{ value: 'de', label: 'German' },
-		{ value: 'it', label: 'Italian' },
-		{ value: 'pt', label: 'Portuguese' },
-		{ value: 'ru', label: 'Russian' },
-		{ value: 'ja', label: 'Japanese' },
-		{ value: 'ko', label: 'Korean' },
-		{ value: 'zh', label: 'Chinese' },
-	];
+	// Use the custom hook
+	const { responseTimer, startResponseTimer, stopResponseTimer } = useResponseTimer();
 
 	useEffect(() => {
 		localStorage.setItem('chatHistory', JSON.stringify(messages));
@@ -86,20 +75,6 @@ const ChatApp = () => {
 		setTimeout(() => setError(''), 5000);
 	};
 
-	const startResponseTimer = () => {
-		setResponseTimer(0);
-		timerRef.current = setInterval(() => {
-			setResponseTimer((prev) => prev + 1);
-		}, 1000);
-	};
-
-	const stopResponseTimer = () => {
-		if (timerRef.current) {
-			clearInterval(timerRef.current);
-			timerRef.current = null;
-		}
-	};
-
 	const formatTime = (seconds) => {
 		const mins = Math.floor(seconds / 60);
 		const secs = seconds % 60;
@@ -110,489 +85,18 @@ const ChatApp = () => {
 		setIsFusionAIEnabled((prev) => !prev);
 	};
 
-	const callGeminiModel = async (input) => {
-		try {
-			const response = await fetch(
-				import.meta.env.VITE_OPENROUTER_API_URL + '/chat/completions',
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-						'HTTP-Referer': window.location.href,
-						'X-Title': 'Mizuka Chat',
-					},
-					body: JSON.stringify({
-						model: 'google/gemini-pro',
-						messages: [
-							{
-								role: 'user',
-								content: input,
-							},
-						],
-					}),
-				}
-			);
 
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
 
-			const data = await response.json();
-			return data.choices[0].message.content;
-		} catch (error) {
-			console.error('Gemini API Error:', error);
-			throw new Error('Failed to get response from Gemini');
-		}
-	};
-
-	const callFusionModel = async (input) => {
-		try {
-			const response = await fetch(
-				import.meta.env.VITE_OPENROUTER_API_URL + '/chat/completions',
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-						'HTTP-Referer': window.location.href,
-						'X-Title': 'Mizuka Chat',
-					},
-					body: JSON.stringify({
-						model: 'anthropic/claude-3-opus', // Using Claude for enhancement
-						messages: [
-							{
-								role: 'system',
-								content:
-									'You are an AI assistant that improves and fact-checks responses. Review the following response and enhance it with additional information, corrections, or clarifications where necessary.',
-							},
-							{
-								role: 'user',
-								content: `Please review and enhance this response: ${input}`,
-							},
-						],
-					}),
-				}
-			);
-
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			const data = await response.json();
-			return data.choices[0].message.content;
-		} catch (error) {
-			console.error('Fusion API Error:', error);
-			throw new Error('Failed to get response from Fusion');
-		}
-	};
-
-	// Advanced version of translateText with caching and improved error handling.
-	const translateText = async (text, targetLanguage) => {
-		if (!text || typeof text !== 'string') return '';
-
-		// Generate a unique cache key based on the target language and text.
-		const cacheKey = `${targetLanguage}:${text}`;
-		if (translationCache.has(cacheKey)) {
-			return translationCache.get(cacheKey);
-		}
-
-		try {
-			const response = await fetch(
-				import.meta.env.VITE_OPENROUTER_API_URL + '/chat/completions',
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-						'HTTP-Referer': window.location.href,
-						'X-Title': 'Mizuka Chat',
-					},
-					body: JSON.stringify({
-						model: 'qwen/qwen2.5-vl-72b-instruct:free',
-						messages: [
-							{
-								role: 'system',
-								content: `You are a translation assistant. Translate the following text to ${targetLanguage}. Only respond with the translation, nothing else.`,
-							},
-							{
-								role: 'user',
-								content: text,
-							},
-						],
-					}),
-				}
-			);
-
-			if (!response.ok) {
-				const errorData = await response.text();
-				console.error('Translation API Error Response:', errorData);
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			const data = await response.json();
-
-			if (!data?.choices?.[0]?.message?.content) {
-				throw new Error('Invalid response format from Translation API');
-			}
-
-			const translatedText = data.choices[0].message.content;
-			// Cache the successful translation for future calls.
-			translationCache.set(cacheKey, translatedText);
-
-			return translatedText;
-		} catch (error) {
-			console.error('Translation error:', error);
-			// Fallback: return the original text if translation fails.
-			return text;
-		}
-	};
-
-	const getAIResponse = async (input) => {
-		abortController.current = new AbortController(); // Initialize the AbortController
-		const signal = abortController.current.signal; // Get the signal for the fetch request
-
-		try {
-			console.log('Sending request with input:', input); // Debug log
-
-			const response = await fetch(
-				import.meta.env.VITE_OPENROUTER_API_URL + '/chat/completions',
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-						'HTTP-Referer': window.location.href,
-						'X-Title': 'Mizuka Chat',
-					},
-					body: JSON.stringify({
-						model: 'google/gemini-2.0-pro-exp-02-05:free',
-						messages: [
-							{
-								role: 'user',
-								content: input,
-							},
-						],
-					}),
-					signal, // Pass the signal to the fetch request
-				}
-			);
-
-			if (!response.ok) {
-				const errorData = await response.text();
-				console.error('API Error Response:', errorData);
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
-
-			const data = await response.json();
-			console.log('API Response:', data);
-
-			if (!data?.choices?.[0]?.message) {
-				throw new Error('Invalid response format from API');
-			}
-
-			return data.choices[0].message.content;
-		} catch (error) {
-			if (error.name === 'AbortError') {
-				console.log('Fetch aborted'); // Handle fetch abort
-			} else {
-				console.error('AI Response error:', error);
-				throw new Error('Failed to get AI response');
-			}
-		}
-	};
-
-	const sendMessage = async (e) => {
-		e.preventDefault();
-		if (!input.trim() || isLoading) return;
-
-		try {
-			setIsLoading(true);
-			setError(''); // Clear any previous errors
-
-			const userMessage = {
-				id: Date.now(),
-				text: input,
-				sender: 'user',
-			};
-
-			// Add loading message
-			const loadingMessage = {
-				id: Date.now() + 1,
-				sender: 'ai',
-				isLoading: true,
-			};
-
-			setMessages((prev) => [...prev, userMessage, loadingMessage]);
-			setInput('');
-			startResponseTimer(); // Start the timer for response
-
-			let processedInput = input;
-			if (selectedLanguage !== 'en') {
-				try {
-					const translatedToEnglish = await translateText(input, 'English');
-					processedInput = translatedToEnglish;
-				} catch (error) {
-					console.error('Translation to English failed:', error);
-				}
-			}
-
-			const aiResponse = await getAIResponse(processedInput);
-
-			let finalResponse = aiResponse;
-			if (selectedLanguage !== 'en') {
-				try {
-					finalResponse = await translateText(aiResponse, selectedLanguage);
-				} catch (error) {
-					console.error('Translation of response failed:', error);
-				}
-			}
-
-			// Replace loading message with actual response
-			setMessages((prev) =>
-				prev.map((msg) =>
-					msg.isLoading
-						? {
-								id: Date.now() + 1,
-								text: finalResponse,
-								sender: 'ai',
-						  }
-						: msg
-				)
-			);
-		} catch (error) {
-			console.error('Error in sendMessage:', error);
-			setError('Failed to get response. Please try again.');
-			// Remove loading message if there's an error
-			setMessages((prev) => prev.filter((msg) => !msg.isLoading));
-		} finally {
-			setIsLoading(false);
-			stopResponseTimer(); // Stop the timer when response is received
-		}
-	};
-
-	const handleLogout = async () => {
-		try {
-			await auth.signOut();
-			localStorage.removeItem('token');
-			clearHistory();
-			window.location.href = '/login';
-		} catch (error) {
-			console.error('Logout error:', error);
-			setError('Failed to logout. Please try again.');
-		}
-	};
-
-	const startNewChat = () => {
-		// Save current chat to history if there are messages
-		if (messages.length > 0) {
-			const currentTime = new Date();
-			const chatSession = {
-				id: Date.now(),
-				messages: messages,
-				timestamp: currentTime.toISOString(),
-				title: messages[0]?.text.substring(0, 30) + '...' || 'New Chat',
-			};
-
-			// Get existing chats from localStorage
-			const existingChats = JSON.parse(
-				localStorage.getItem('chatSessions') || '[]'
-			);
-
-			// Add new chat session
-			const updatedChats = [chatSession, ...existingChats];
-
-			// Keep only last 10 chat sessions
-			const limitedChats = updatedChats.slice(0, 10);
-
-			// Save to localStorage
-			localStorage.setItem('chatSessions', JSON.stringify(limitedChats));
-		}
-
-		// Clear current messages
-		setMessages([]);
-		setInput('');
-	};
-
-	const downloadPDF = async (text, messageId) => {
-		try {
-			// Initialize PDF
-			const pdf = new jsPDF({
-				orientation: 'portrait',
-				unit: 'mm',
-				format: 'a4',
-				putOnlyUsedFonts: true,
-			});
-
-			// Set margins and usable page dimensions
-			const pageWidth = pdf.internal.pageSize.getWidth();
-			const pageHeight = pdf.internal.pageSize.getHeight();
-			const margin = 20; // 20mm margins
-			const usableWidth = pageWidth - 2 * margin;
-
-			// Add header
-			pdf.setFontSize(18);
-			pdf.setTextColor(40);
-			pdf.text('Chat Conversation', pageWidth / 2, margin, { align: 'center' });
-
-			// Add timestamp
-			pdf.setFontSize(10);
-			pdf.setTextColor(100);
-			pdf.text(new Date().toLocaleString(), pageWidth / 2, margin + 7, {
-				align: 'center',
-			});
-
-			// Create a temporary div for markdown rendering
-			const tempDiv = document.createElement('div');
-			tempDiv.className = 'pdf-markdown-content';
-			document.body.appendChild(tempDiv);
-
-			// Render markdown content
-			const root = ReactDOM.createRoot(tempDiv);
-			root.render(
-				<div className='pdf-content'>
-					<ReactMarkdown>{text}</ReactMarkdown>
-				</div>
-			);
-
-			// Wait for rendering
-			await new Promise((resolve) => setTimeout(resolve, 100));
-
-			// Convert markdown content to canvas
-			const canvas = await html2canvas(tempDiv, {
-				scale: 2,
-				logging: false,
-				useCORS: true,
-				backgroundColor: '#ffffff',
-			});
-
-			// Clean up temporary div
-			document.body.removeChild(tempDiv);
-
-			// Calculate dimensions
-			const imgData = canvas.toDataURL('image/jpeg', 1.0);
-			const imgWidth = usableWidth;
-			const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-			let heightLeft = imgHeight;
-			let position = margin + 20; // Start after header
-			let page = 1;
-
-			// Add first page content
-			pdf.addImage(imgData, 'JPEG', margin, position, imgWidth, imgHeight);
-			heightLeft -= pageHeight - position - margin;
-
-			// Add additional pages if needed
-			while (heightLeft > 0) {
-				pdf.addPage();
-				page++;
-				position = margin;
-				pdf.addImage(
-					imgData,
-					'JPEG',
-					margin,
-					position,
-					imgWidth,
-					imgHeight,
-					'',
-					'FAST',
-					0,
-					-(pageHeight - margin - 20) * (page - 1)
-				);
-				heightLeft -= pageHeight - margin * 2;
-
-				// Add page number
-				pdf.setFontSize(10);
-				pdf.text(`Page ${page}`, pageWidth / 2, pageHeight - 10, {
-					align: 'center',
-				});
-			}
-
-			// Add page number to first page
-			pdf.setPage(1);
-			pdf.text(`Page 1 of ${page}`, pageWidth / 2, pageHeight - 10, {
-				align: 'center',
-			});
-
-			// Save the PDF
-			pdf.save(`chat-conversation-${messageId}.pdf`);
-		} catch (error) {
-			console.error('PDF generation failed:', error);
-		}
-	};
-
-	const saveChatHistory = (messages) => {
-		const chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
-		chatHistory.push({ timestamp: new Date(), messages });
-		localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
-	};
-
-	// Call this function when a chat session ends
-	const endChatSession = () => {
-		saveChatHistory(messages);
-	};
-
-	const handlePersonalityChange = (e) => {
-		setSelectedPersonality(e.target.value);
-	};
-
-	const startVoiceRecognition = () => {
-		const recognition = new window.SpeechRecognition();
-		recognition.onresult = (event) => {
-			const transcript = event.results[0][0].transcript;
-			setInput(transcript); // Set the input state to the recognized text
-		};
-		recognition.start();
-	};
-
-	const speakResponse = (text) => {
-		const utterance = new SpeechSynthesisUtterance(text);
-		window.speechSynthesis.speak(utterance);
-	};
-
-	const fetchSearchResults = async (query) => {
-		const response = await fetch(`https://api.example.com/search?q=${query}`);
-		const data = await response.json();
-		return data.results; // Adjust based on your API response structure
-	};
-
-	const summarizeText = async (text) => {
-		const response = await fetch('https://api.example.com/summarize', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ text }),
-		});
-		const data = await response.json();
-		return data.summary; // Adjust based on your API response structure
-	};
-
-	const handleLanguageChange = (e) => {
-		setSelectedLanguage(e.target.value);
-	};
-
-	const pinMessage = (messageId) => {
-		setPinnedMessages((prev) => {
-			if (prev.includes(messageId)) {
-				return prev.filter((id) => id !== messageId); // Unpin if already pinned
-			}
-			if (prev.length >= 5) {
-				return prev; // Don't add new pin if already at 5 messages
-			}
-			return [...prev, messageId]; // Pin the message
-		});
+	const handlePinMessage = (messageId) => {
+		pinMessage(messageId, pinnedMessages, setPinnedMessages); // Use the new function
 	};
 
 	const unpinMessage = (messageId) => {
 		setPinnedMessages((prev) => prev.filter((id) => id !== messageId)); // Unpin the message
 	};
 
-	const stopSearch = () => {
-		// Logic to stop the ongoing search
-		if (abortController.current) {
-			abortController.current.abort(); // Abort the fetch request
-		}
-		stopResponseTimer(); // Stop the response timer if applicable
-		setIsLoading(false); // Set loading state to false
+	const handleStopSearch = () => {
+		stopSearch(abortController, stopResponseTimer, setIsLoading); // Use the new function
 	};
 
 	return (
@@ -622,14 +126,10 @@ const ChatApp = () => {
 					</h2>
 
 					<div className='header-buttons'>
-						<button
-							onClick={startNewChat}
-							className='new-chat-btn'
-							data-tooltip='Start New Chat'
-							aria-label='Start New Chat'
-						>
-							<PlusCircle size={18} />
-						</button>
+						<NewChatButton 
+							clearHistory={clearHistory} 
+							messages={messages} 
+						/>
 						<button
 							onClick={clearHistory}
 							className='clear-btn'
@@ -638,14 +138,7 @@ const ChatApp = () => {
 						>
 							<Trash2 size={18} />
 						</button>
-						<button
-							onClick={handleLogout}
-							className='logout-btn'
-							data-tooltip='Logout'
-							aria-label='Logout'
-						>
-							<LogOut size={18} />
-						</button>
+						<LogoutButton onLogout={clearHistory} />
 					</div>
 				</div>
 
@@ -677,16 +170,9 @@ const ChatApp = () => {
 											>
 												<Clipboard size={14} />
 											</button>
+											<PDFDownloader text={msg.text} messageId={msg.id} />
 											<button
-												onClick={() => downloadPDF(msg.text, msg.id)}
-												className='icon-btn'
-												data-tooltip='Download as PDF'
-												aria-label='Download as PDF'
-											>
-												<FileDown size={14} />
-											</button>
-											<button
-												onClick={() => pinMessage(msg.id)}
+												onClick={() => handlePinMessage(msg.id)}
 												className='icon-btn'
 												data-tooltip='Pin Message'
 												aria-label='Pin Message'
@@ -723,46 +209,18 @@ const ChatApp = () => {
 					<div ref={messagesEndRef} />
 				</div>
 
-				<form onSubmit={sendMessage} className='input-container'>
-					<div className='selectors-container'>
-						<select
-							className='personality-selector'
-							onChange={handlePersonalityChange}
-						>
-							<option value='default'>Default AI</option>
-							<option value='friendly'>Friendly AI</option>
-							<option value='professional'>Professional AI</option>
-						</select>
-						<select
-							className='language-selector'
-							value={selectedLanguage}
-							onChange={(e) => setSelectedLanguage(e.target.value)}
-						>
-							{languageOptions.map((option) => (
-								<option key={option.value} value={option.value}>
-									{option.label}
-								</option>
-							))}
-						</select>
-					</div>
-
-					<input
-						type='text'
-						value={input}
-						onChange={(e) => setInput(e.target.value)}
-						placeholder='Type your message...'
-						disabled={isLoading}
-					/>
-					<button
-						type='button'
-						className='send-btn'
-						data-tooltip='Send Message'
-						aria-label='Send Message'
-						onClick={isLoading ? stopSearch : sendMessage}
-					>
-						{isLoading ? <RefreshCw className='animate-spin' /> : <Send />}
-					</button>
-				</form>
+				<MessageSender 
+					input={input}
+					setInput={setInput}
+					setMessages={setMessages}
+					setIsLoading={setIsLoading}
+					setError={setError}
+					selectedLanguage={selectedLanguage}
+					startResponseTimer={startResponseTimer}
+					stopResponseTimer={stopResponseTimer}
+					isLoading={isLoading}
+					abortController={abortController}
+				/>
 			</div>
 		</div>
 	);
