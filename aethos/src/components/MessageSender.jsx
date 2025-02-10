@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { RefreshCw, Send } from 'lucide-react';
 import translateText from '../api/TranslationAPI';
 import getAIResponse from '../api/AIResponseAPI';
@@ -11,14 +11,21 @@ const MessageSender = ({
     setIsLoading, 
     setError, 
     selectedLanguage, 
-    setSelectedLanguage,
+    setSelectedLanguage, 
     startResponseTimer, 
     stopResponseTimer,
-    isLoading,
-    abortController,
-    handlePersonalityChange
+    isLoading
 }) => {
-    console.log('MessageSender rendered with input:', input); // Debug log
+    const [selectedPersonality, setSelectedPersonality] = useState('default');
+
+    /* const handlePersonalityChange = (e) => {
+        setSelectedPersonality(e.target.value);
+    }; */
+    const handlePersonalityChange = () => {
+      console.log('hety');
+      
+
+    }
 
     const handleSendMessage = async (e) => {
         e.preventDefault();
@@ -61,8 +68,8 @@ const MessageSender = ({
                 processedInput = translatedToEnglish;
             }
 
-            // Pass abortController to getAIResponse
-            const aiResponse = await getAIResponse(processedInput, abortController);
+            // Get AI response
+            const aiResponse = await getAIResponse(processedInput);
             console.log('AI Response received:', aiResponse); // Debug log
 
             // Translate response if needed
@@ -92,28 +99,16 @@ const MessageSender = ({
         }
     };
 
-    const handlePersonalityChange = (e) => {
-        console.log('Personality changed to:', e.target.value);
-        setSelectedPersonality(e.target.value);
-    };
-
     return (
         <div className="message-sender-container">
             <form onSubmit={handleSendMessage} className="input-container">
                 <div className='selectors-container'>
-                    <select
-                        className='personality-selector'
-                        onChange={handlePersonalityChange}
-                    >
+                    <select className='personality-selector' onChange={handlePersonalityChange}>
                         <option value='default'>Default AI</option>
                         <option value='friendly'>Friendly AI</option>
                         <option value='professional'>Professional AI</option>
                     </select>
-                    <select
-                        className='language-selector'
-                        value={selectedLanguage}
-                        onChange={(e) => setSelectedLanguage(e.target.value)}
-                    >
+                    <select className='language-selector' value={selectedLanguage} onChange={(e) => setSelectedLanguage(e.target.value)}>
                         {languageOptions.map((option) => (
                             <option key={option.value} value={option.value}>
                                 {option.label}
