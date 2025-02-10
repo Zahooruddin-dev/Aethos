@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { RefreshCw, Send } from 'lucide-react';
 import translateText from '../api/TranslationAPI';
 import getAIResponse from '../api/AIResponseAPI';
-import { languageOptions } from '../utils/LanguageOptions';
+import { languageOptions, useLanguage } from '../utils/LanguageOptions';
 
 const MessageSender = ({ 
     input, 
@@ -10,13 +10,12 @@ const MessageSender = ({
     setMessages, 
     setIsLoading, 
     setError, 
-    selectedLanguage, 
-    setSelectedLanguage, 
     startResponseTimer, 
     stopResponseTimer,
     isLoading
 }) => {
     const [selectedPersonality, setSelectedPersonality] = useState('default');
+    const { selectedLanguage, setSelectedLanguage } = useLanguage();
 
     /* const handlePersonalityChange = (e) => {
         setSelectedPersonality(e.target.value);

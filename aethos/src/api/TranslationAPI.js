@@ -44,7 +44,9 @@ const translateText = async (text, targetLanguage) => {
 
 		const data = await response.json();
 
-		if (!data?.choices?.[0]?.message?.content) {
+		// Check if the response format is valid
+		if (!data || !data.choices || !data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
+			console.error('Invalid response format from Translation API:', data);
 			throw new Error('Invalid response format from Translation API');
 		}
 

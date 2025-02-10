@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 export const languageOptions = [
 	{ value: 'en', label: 'English' },
 	{ value: 'es', label: 'Spanish' },
@@ -9,4 +11,14 @@ export const languageOptions = [
 	{ value: 'ja', label: 'Japanese' },
 	{ value: 'ko', label: 'Korean' },
 	{ value: 'zh', label: 'Chinese' },
-]; 
+];
+
+// New hook to manage selected language
+export const useLanguage = () => {
+	const [selectedLanguage, setSelectedLanguage] = useState('en'); // Default language
+
+	return {
+		selectedLanguage,
+		setSelectedLanguage,
+	};
+}; 
