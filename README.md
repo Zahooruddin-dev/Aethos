@@ -18,6 +18,22 @@ The translation feature allows users to communicate in multiple languages. It us
 - **Caching**: Translations are cached to improve performance and reduce API calls.
 - **Language Selection**: Users can select their preferred language, enhancing accessibility and user experience.
 - **Fallback Mechanism**: If translation fails, the original text is returned, ensuring that the user can still communicate effectively.
+
+To make this work for you, you need to have these api keys in env 
+
+VITE_OPENROUTER_API_KEY=
+VITE_OPENROUTER_API_URL=
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_GEMINI_API_KEY=
+VITE_GEMINI_API_URL=
+
+
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
