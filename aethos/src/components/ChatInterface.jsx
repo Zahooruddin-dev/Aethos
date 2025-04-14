@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-	Bot,
-	Clipboard,
-	Trash2,
-	Menu,
-	Pin,
-} from 'lucide-react';
-
+import { Bot, Clipboard, Trash2, Menu, Pin } from 'lucide-react';
 import Markdown from 'react-markdown';
 import Sidebar from './Sidebar/Sidebar';
 import 'jspdf-autotable'; // For better text handling
@@ -17,10 +10,7 @@ import NewChatButton from './NewChatButton'; // Import the new component
 import { pinMessage } from '../utils/MessageUtils'; // Import the new function
 import MessageSender from './MessageSender.jsx'; // Import the new component
 import { stopSearch } from '../utils/SearchController'; // Import the new function
-import { languageOptions } from '../utils/LanguageOptions'; // Import the new language options
 import useResponseTimer from '../hooks/useResponseTimer'; // Import the custom hook
-
-// Global cache for translations to avoid redundant API calls.
 
 const ChatApp = () => {
 	const [messages, setMessages] = useState(() => {
@@ -42,7 +32,8 @@ const ChatApp = () => {
 	const abortController = useRef(null); // Create a ref to hold the AbortController
 
 	// Use the custom hook
-	const { responseTimer, startResponseTimer, stopResponseTimer } = useResponseTimer();
+	const { responseTimer, startResponseTimer, stopResponseTimer } =
+		useResponseTimer();
 
 	useEffect(() => {
 		localStorage.setItem('chatHistory', JSON.stringify(messages));
@@ -78,14 +69,8 @@ const ChatApp = () => {
 		setIsFusionAIEnabled((prev) => !prev);
 	};
 
-
-
 	const handlePinMessage = (messageId) => {
 		pinMessage(messageId, pinnedMessages, setPinnedMessages); // Use the new function
-	};
-
-	const unpinMessage = (messageId) => {
-		setPinnedMessages((prev) => prev.filter((id) => id !== messageId)); // Unpin the message
 	};
 
 	const handleStopSearch = () => {
@@ -119,10 +104,7 @@ const ChatApp = () => {
 					</h2>
 
 					<div className='header-buttons'>
-						<NewChatButton 
-							clearHistory={clearHistory} 
-							messages={messages} 
-						/>
+						<NewChatButton clearHistory={clearHistory} messages={messages} />
 						<button
 							onClick={clearHistory}
 							className='clear-btn'
@@ -202,7 +184,7 @@ const ChatApp = () => {
 					<div ref={messagesEndRef} />
 				</div>
 
-				<MessageSender 
+				<MessageSender
 					input={input}
 					setInput={setInput}
 					setMessages={setMessages}
