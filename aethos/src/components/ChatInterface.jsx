@@ -100,7 +100,11 @@ const ChatApp = () => {
 						<Menu size={24} />
 					</button>
 					<h2>
-						Mizuka Chat <Bot size={20} />
+						M I Z U K A{' '}
+						<span>
+							{' '}
+							<Bot size={30} />
+						</span>
 					</h2>
 
 					<div className='header-buttons'>

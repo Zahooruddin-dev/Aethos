@@ -9,7 +9,7 @@ const callAI = async (prompt) => {
                 'X-Title': 'Aethos Chat'
             },
             body: JSON.stringify({
-              model:"nvidia/llama-3.1-nemotron-nano-8b-v1:free",
+              model:MODEL_NAME,
               messages: [
                     {
                         role: 'user',
@@ -53,5 +53,7 @@ export const translateText = async (text, targetLanguage) => {
 			return text;
 	}
 };
+export const MODEL_NAME = "nvidia/llama-3.1-nemotron-nano-8b-v1:free";
 
+// Existing code...
 export default callAI;

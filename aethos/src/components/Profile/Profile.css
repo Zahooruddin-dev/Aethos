@@ -1,167 +1,173 @@
 .profile-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #1a1f25 0%, #121518 100%);
-  color: white;
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+	min-height: 100vh;
+	background: linear-gradient(135deg, #1a1f25 0%, #121518 100%);
+	color: white;
+	padding: 2rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: flex-start;
 }
 
 .profile-header {
-  width: 100%;
-  max-width: 600px;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
+	width: 100%;
+	max-width: 600px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 2rem;
 }
 
 .back-button {
-  background: rgba(255, 255, 255, 0.05);
-  border: none;
-  color: white;
-  cursor: pointer;
-  padding: 0.75rem;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+	background: rgba(255, 255, 255, 0.05);
+	border: none;
+	color: white;
+	cursor: pointer;
+	padding: 0.75rem;
+	border-radius: 8px;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
+	background: rgba(255, 255, 255, 0.1);
+	transform: translateY(-2px);
 }
 
 .profile-content {
-  width: 100%;
-  max-width: 600px;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+	width: 100%;
+	max-width: 600px;
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
 }
 
-.profile-section, .password-section {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  padding: 1.4rem;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.account-info {
+	text-align: center;
+	margin-bottom: 1rem;
+}
+
+.account-info h3 {
+	font-size: 1.5rem;
+	color: #20b2aa;
 }
 
 .info-item {
-  margin: 1.5rem 0;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 12px;
+	padding: 1.5rem;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	margin-bottom: 1rem;
 }
 
 .info-item label {
-  display: block;
-  color: #888;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
+	display: block;
+	color: #888;
+	margin-bottom: 0.5rem;
+	font-size: 1rem;
 }
 
 .info-item p {
-  font-size: 1.1rem;
-  margin: 0;
+	font-size: 1.2rem;
+	margin: 0;
+	word-wrap: break-word;
+}
+
+.password-section {
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 12px;
+	padding: 1.5rem;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.password-section h3 {
+	text-align: center;
+	font-size: 1.5rem;
+	color: #20b2aa;
 }
 
 .password-section input {
-  width: 100%;
-  padding: 1rem;
-  margin-bottom: 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: white;
-  font-size: 1rem;
-  transition: all 0.3s ease;
-}
-
-.password-section input:focus {
-  outline: none;
-  border-color: #20B2AA;
-  box-shadow: 0 0 20px rgba(32, 178, 170, 0.2);
+	padding: 1rem;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 8px;
+	color: white;
+	font-size: 1.1rem;
 }
 
 .password-section button {
-  width: 100%;
-  padding: 1rem;
-  background: linear-gradient(135deg, #26ccc3 0%, #20B2AA 100%);
-  border: none;
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+	width: 100%;
+	padding: 1rem;
+	background: linear-gradient(135deg, #26ccc3 0%, #20b2aa 100%);
+	border: none;
+	border-radius: 8px;
+	color: white;
+	font-size: 1.1rem;
+	cursor: pointer;
 }
 
 .password-section button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(32, 178, 170, 0.4);
+	transform: translateY(-2px);
+	box-shadow: 0 4px 20px rgba(32, 178, 170, 0.4);
 }
 
-.error-message, .success-message {
-  padding: 1rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  text-align: center;
-  animation: fadeIn 0.3s ease;
+.error-message,
+.success-message {
+	padding: 1rem;
+	border-radius: 8px;
+	text-align: center;
+	font-size: 1rem;
 }
 
 .error-message {
-  background: rgba(255, 0, 0, 0.1);
-  border: 1px solid rgba(255, 0, 0, 0.3);
-  color: #ff6b6b;
+	background: rgba(255, 0, 0, 0.1);
+	color: #ff6b6b;
 }
 
 .success-message {
-  background: rgba(32, 178, 170, 0.1);
-  border: 1px solid rgba(32, 178, 170, 0.3);
-  color: #20B2AA;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+	background: rgba(32, 178, 170, 0.1);
+	color: #20b2aa;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .profile-container {
-    padding: 1rem;
-  }
+	.profile-container {
+		padding: 1.5rem;
+	}
 
-  .profile-header {
-    margin-bottom: 1.5rem;
-  }
+	.profile-header {
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+	}
 
-  .profile-section, .password-section {
-    padding: 1.5rem;
-  }
+	.info-item {
+		padding: 1rem;
+	}
 
-  .password-section input,
-  .password-section button {
-    padding: 0.875rem;
-  }
+	.password-section input,
+	.password-section button {
+		padding: 0.8rem;
+		font-size: 1rem;
+	}
 }
 
 @media (max-width: 480px) {
-  .profile-container {
-    padding: 0.75rem;
-  }
+	.profile-container {
+		padding: 1rem;
+	}
 
-  .profile-section, .password-section {
-    padding: 1rem;
-  }
+	.info-item {
+		padding: 0.8rem;
+	}
 
-  .info-item {
-    margin: 1rem 0;
-  }
-
-  .password-section input,
-  .password-section button {
-    padding: 0.75rem;
-  }
-} 
+	.password-section input,
+	.password-section button {
+		padding: 0.7rem;
+	}
+}

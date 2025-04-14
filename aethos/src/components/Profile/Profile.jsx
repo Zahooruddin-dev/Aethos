@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { auth } from '../../firebase/firebase';
-import { updatePassword, updateEmail } from 'firebase/auth';
+import { updatePassword } from 'firebase/auth';
 import { ArrowLeft } from 'lucide-react';
+import { MODEL_NAME } from '../../api/AI';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 
@@ -53,19 +54,21 @@ const Profile = () => {
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
 
-        <div className="profile-section">
+        <div className="account-info">
           <h3>Account Information</h3>
-          <div className="info-item">
-            <label>Email</label>
-            <p>{auth.currentUser?.email}</p>
-          </div>
-          <div className="info-item">
-            <label>Model</label>
-            <p>Gemini Pro 2.0</p>
-          </div>
         </div>
 
-        <form onSubmit={handlePasswordUpdate} className="password-section">
+        <div className="info-item">
+          <label>Email</label>
+          <p>{auth.currentUser?.email}</p>
+        </div>
+
+        <div className="info-item">
+          <label>Model</label>
+          <p>{MODEL_NAME}</p>
+        </div>
+
+        <div className="password-section">
           <h3>Change Password</h3>
           <input
             type="password"
@@ -86,10 +89,10 @@ const Profile = () => {
           <button type="submit" disabled={isLoading}>
             {isLoading ? 'Updating...' : 'Update Password'}
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );
 };
 
-export default Profile; 
+export default Profile;
