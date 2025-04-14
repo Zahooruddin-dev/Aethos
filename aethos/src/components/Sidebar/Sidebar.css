@@ -242,16 +242,15 @@
 }
 
 .pinned-chats {
-  margin: 0.5rem 0.5rem 0rem 0.5rem;
+  margin: 0.5rem 0rem 0rem 0.5rem;
     margin-top: 1rem;
     padding: 0.5rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 1.8rem;
+    border-radius: 1rem;
     text-align: left;
 }
 .pinned-chats:hover {
   transition: background 0.3s;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
     cursor: pointer;
     border-color: #848484;
 } 

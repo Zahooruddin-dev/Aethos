@@ -6,6 +6,7 @@ import ChatInterface from './components/ChatInterface';
 import ForgotPassword from './components/ForgotPassword/ForgotPassword';
 import Profile from './components/Profile/Profile';
 import { auth } from './firebase/firebase';
+import { AuthProvider } from './context/AuthContext';
 
 const PrivateRoute = ({ children }) => {
 	return auth.currentUser ? children : <Navigate to="/login" />;
@@ -13,29 +14,31 @@ const PrivateRoute = ({ children }) => {
 
 function App() {
 	return (
-		<Router>
-			<Routes>
-				<Route path="/login" element={<Login />} />
-				<Route path="/register" element={<Register />} />
-				<Route path="/forgot-password" element={<ForgotPassword />} />
-				<Route
-					path="/profile"
-					element={
-						<PrivateRoute>
-							<Profile />
-						</PrivateRoute>
-					}
-				/>
-				<Route
-					path="/"
-					element={
-						<PrivateRoute>
-							<ChatInterface />
-						</PrivateRoute>
-					}
-				/>
-			</Routes>
-		</Router>
+		<AuthProvider>
+			<Router>
+				<Routes>
+					<Route path="/login" element={<Login />} />
+					<Route path="/register" element={<Register />} />
+					<Route path="/forgot-password" element={<ForgotPassword />} />
+					<Route
+						path="/profile"
+						element={
+							<PrivateRoute>
+								<Profile />
+							</PrivateRoute>
+						}
+					/>
+					<Route
+						path="/"
+						element={
+							<PrivateRoute>
+								<ChatInterface />
+							</PrivateRoute>
+						}
+					/>
+				</Routes>
+			</Router>
+		</AuthProvider>
 	);
 }
 
