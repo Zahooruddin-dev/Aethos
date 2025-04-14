@@ -2,12 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
 	Bot,
-	Send,
 	Clipboard,
-	RefreshCw,
 	Trash2,
 	Menu,
-	PlusCircle,
 	Pin,
 } from 'lucide-react';
 
@@ -17,9 +14,6 @@ import 'jspdf-autotable'; // For better text handling
 import PDFDownloader from './PDFDownloader'; // Import the new component
 import LogoutButton from './LogoutButton'; // Import the new component
 import NewChatButton from './NewChatButton'; // Import the new component
-import callGeminiModel from './GeminiAPI'; // Import the new function
-import translateText from '../api/TranslationAPI'; // Import the new function
-import callFusionModel from '../api/FusionModelAPI'; // Import the new function
 import { pinMessage } from '../utils/MessageUtils'; // Import the new function
 import MessageSender from './MessageSender.jsx'; // Import the new component
 import { stopSearch } from '../utils/SearchController'; // Import the new function
@@ -43,7 +37,6 @@ const ChatApp = () => {
 		const saved = localStorage.getItem('chatSessions');
 		return saved ? JSON.parse(saved) : [];
 	});
-	const [selectedPersonality, setSelectedPersonality] = useState('default');
 	const [selectedLanguage, setSelectedLanguage] = useState('en');
 	const [pinnedMessages, setPinnedMessages] = useState([]);
 	const abortController = useRef(null); // Create a ref to hold the AbortController

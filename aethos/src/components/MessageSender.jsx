@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { RefreshCw, Send } from 'lucide-react';
-import translateText from '../api/TranslationAPI';
-import getAIResponse from '../api/AIResponseAPI';
+import callAI, { translateText } from '../api/AI.js';
 import { languageOptions, useLanguage } from '../utils/LanguageOptions';
 
 const MessageSender = ({ 
@@ -17,66 +16,74 @@ const MessageSender = ({
     const [selectedPersonality, setSelectedPersonality] = useState('default');
     const { selectedLanguage, setSelectedLanguage } = useLanguage();
 
-    /* const handlePersonalityChange = (e) => {
+    const handlePersonalityChange = (e) => {
         setSelectedPersonality(e.target.value);
-    }; */
-    const handlePersonalityChange = () => {
-      console.log('hety');
-      
-
-    }
-
+    };
+    
     const handleSendMessage = async (e) => {
         e.preventDefault();
         console.log('handleSendMessage called'); // Debug log
-
+    
         if (!input.trim() || isLoading) {
             console.log('Input empty or loading, returning'); // Debug log
             return;
         }
-
+    
         try {
             setIsLoading(true);
             setError('');
-
+    
             // Create user message
             const userMessage = {
                 id: Date.now(),
                 text: input,
                 sender: 'user',
             };
-
+    
             // Create loading message
             const loadingMessage = {
                 id: Date.now() + 1,
                 sender: 'ai',
                 isLoading: true,
             };
-
+    
             console.log('Adding messages:', { userMessage, loadingMessage }); // Debug log
-
+    
             // Update messages with user message and loading message
             setMessages(prev => [...prev, userMessage, loadingMessage]);
             setInput('');
             startResponseTimer();
-
+    
             // Process input with translation if needed
             let processedInput = input;
             if (selectedLanguage !== 'en') {
                 const translatedToEnglish = await translateText(input, 'English');
                 processedInput = translatedToEnglish;
             }
-
+    
+            // Add personality context to the prompt
+            let personalityContext = '';
+            if (selectedPersonality === 'friendly') {
+                personalityContext = 'Provide a friendly response: ';
+            } else if (selectedPersonality === 'professional') {
+                personalityContext = 'Provide a professional and formal response: ';
+            }
+    
+            const finalPrompt = `${personalityContext}${processedInput}`;
+    
+            // Log the final prompt being sent to the LLM
+            console.log('Final prompt sent to AI:', finalPrompt);
+    
             // Get AI response
-            const aiResponse = await getAIResponse(processedInput);
+            const aiResponse = await callAI(finalPrompt);
             console.log('AI Response received:', aiResponse); // Debug log
-
+    
             // Translate response if needed
             let finalResponse = aiResponse;
             if (selectedLanguage !== 'en') {
                 finalResponse = await translateText(aiResponse, selectedLanguage);
             }
-
+    
             // Update messages with AI response
             setMessages(prev => 
                 prev.map(msg => 
@@ -87,7 +94,7 @@ const MessageSender = ({
                     } : msg
                 )
             );
-
+    
         } catch (error) {
             console.error('Error in handleSendMessage:', error);
             setError('Failed to get response. Please try again.');
@@ -97,7 +104,6 @@ const MessageSender = ({
             stopResponseTimer();
         }
     };
-
     return (
         <div className="message-sender-container">
             <form onSubmit={handleSendMessage} className="input-container">
@@ -138,4 +144,4 @@ const MessageSender = ({
     );
 };
 
-export default MessageSender; 
+export default MessageSender;
