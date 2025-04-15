@@ -1,119 +1,152 @@
-import React, { useState } from 'react';
-import { MessageCircle, Search, X, User, Pin } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { MessageCircle, Search, X, User, Pin, Menu, Settings } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
 const Sidebar = ({ 
-  isOpen = true,
-  onClose = () => {},
+  isOpen,
+  onClose,
   chatHistory = [],
-  toggleFusionAI = () => {},
-  isFusionAIEnabled = false,
   pinnedMessages = [],
-  setPinnedMessages = () => {},
+  setPinnedMessages,
   messages = []
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const isMobile = window.innerWidth <= 772;
-  
-  // Determine the correct className based on mobile vs desktop
-  const sidebarClassName = isMobile
-    ? `sidebar ${isOpen ? 'open' : ''}`
-    : `sidebar ${!isOpen ? 'closed' : ''}`;
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const location = useLocation();
 
-  // Add null check and ensure chatHistory is an array
-  const safeHistory = Array.isArray(chatHistory) ? chatHistory : [];
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
 
-  const filteredChats = searchTerm
-    ? safeHistory.filter(chat => 
-        chat?.text?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : safeHistory;
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
-  const pinMessage = (messageId) => {
-    setPinnedMessages((prev) => {
-      if (prev.includes(messageId)) {
-        return prev.filter(id => id !== messageId);
+  // Handle escape key to close sidebar on mobile
+  useEffect(() => {
+    const handleEscKey = (event) => {
+      if (event.key === 'Escape' && isMobile && isOpen) {
+        onClose();
       }
-      return [...prev, messageId];
-    });
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => document.removeEventListener('keydown', handleEscKey);
+  }, [isMobile, isOpen, onClose]);
+
+  // Memoized filter function
+  const getFilteredChats = useCallback(() => {
+    if (!Array.isArray(chatHistory)) return [];
+    
+    return searchTerm
+      ? chatHistory.filter(chat => 
+          chat?.text?.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : chatHistory;
+  }, [chatHistory, searchTerm]);
+
+  const filteredChats = getFilteredChats();
+
+  const handleUnpin = (messageId, event) => {
+    event.stopPropagation();
+    setPinnedMessages(prev => prev.filter(id => id !== messageId));
   };
 
-  const unpinMessage = (messageId) => {
-    setPinnedMessages((prev) => prev.filter(id => id !== messageId));
-  };
+  const sidebarClassName = `sidebar ${!isOpen ? 'closed' : ''} ${isMobile ? 'mobile' : ''}`;
 
   return (
-    <div className={sidebarClassName}>
-      <div className="sidebar-header">
-        <div className="search-container">
-          <Search size={20} />
-          <input
-            type="text"
-            placeholder="Search chats..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <button className="close-btn" onClick={onClose}>
-          <X size={24} />
-        </button>
-      </div>
-
-      <div className="chat-list">
-        {filteredChats.map((chat) => (
-          <div key={chat?.id || Math.random()} className="chat-item">
-            <MessageCircle size={20} />
-            <span>{(chat?.text || '').substring(0, 50)}{chat?.text?.length > 50 ? '...' : ''}</span>
+    <>
+      {isMobile && isOpen && (
+        <div className="sidebar-overlay" onClick={onClose} />
+      )}
+      <aside className={sidebarClassName}>
+        <div className="sidebar-header">
+          <div className="search-container">
+            <Search className="search-icon" size={18} />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
-        ))}
-      </div>
-      <div className="pinned-chats">
-  <h3>Pinned Chats</h3>
-  {pinnedMessages.length === 0 ? (
-    <p>No pinned messages.</p>
-  ) : (
-    pinnedMessages.map((messageId) => {
-      const message = messages.find(msg => msg.id === messageId);
-      // Split the message text into words and take first 5
-      const firstFiveWords = message.text.split(' ').slice(0, 5).join(' ');
-      const hasMoreWords = message.text.split(' ').length > 5;
-      
-      return (
-        <div key={messageId} className="pinned-chat-item">
-          <span>{firstFiveWords}{hasMoreWords ? '...' : ''}</span>
-          <button onClick={() => unpinMessage(messageId)} className="unpin-btn">
-            <Pin size={16} />
-          </button>
+          {isMobile && (
+            <button className="close-btn" onClick={onClose} aria-label="Close sidebar">
+              <X size={24} />
+            </button>
+          )}
         </div>
-      );
-    })
-  )}
-</div>
 
-      <div className="toggle-fusion-ai">
-        <label>
-          <input 
-            type="checkbox" 
-            checked={isFusionAIEnabled} 
-            onChange={(e) => toggleFusionAI(e.target.checked)}
-          />
-          <span className="switch"></span>
-          Toggle Fusion AI
-        </label>
-        <span className="tooltip" data-tooltip="Switch between Fusion AI and Gemini model">
-          ?
-        </span>
-      </div>
+        <nav className="sidebar-nav">
+          <div className="nav-section">
+            <h3>Recent Chats</h3>
+            <div className="chat-list">
+              {filteredChats.length > 0 ? (
+                filteredChats.map((chat) => (
+                  <div key={chat?.id || Math.random()} className="chat-item">
+                    <MessageCircle size={18} />
+                    <span className="chat-text">
+                      {chat?.text?.substring(0, 40)}{chat?.text?.length > 40 ? '...' : ''}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="empty-state">No conversations yet</div>
+              )}
+            </div>
+          </div>
 
-      <Link to="/profile" onClick={onClose} className="profile-link">
-        <div className="profile-section">
-          <User size={24} />
-          <span>Profile Settings</span>
+          <div className="nav-section">
+            <h3>Pinned Messages</h3>
+            <div className="pinned-chats">
+              {pinnedMessages.length > 0 ? (
+                pinnedMessages.map((messageId) => {
+                  const message = messages.find(msg => msg.id === messageId);
+                  if (!message) return null;
+                  
+                  const preview = message.text.split(' ').slice(0, 5).join(' ');
+                  const hasMore = message.text.split(' ').length > 5;
+                  
+                  return (
+                    <div key={messageId} className="pinned-chat-item">
+                      <span className="pinned-text">{preview}{hasMore ? '...' : ''}</span>
+                      <button 
+                        onClick={(e) => handleUnpin(messageId, e)}
+                        className="unpin-btn"
+                        aria-label="Unpin message"
+                      >
+                        <Pin size={16} />
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="empty-state">No pinned messages</div>
+              )}
+            </div>
+          </div>
+        </nav>
+
+        <div className="sidebar-footer">
+          <Link to="/profile" onClick={onClose} className="profile-link">
+            <div className="profile-section">
+              <User size={20} />
+              <span>Profile</span>
+            </div>
+          </Link>
+          <Link to="/settings" onClick={onClose} className="settings-link">
+            <div className="settings-section">
+              <Settings size={20} />
+              <span>Settings</span>
+            </div>
+          </Link>
         </div>
-      </Link>
-    </div>
+      </aside>
+    </>
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
