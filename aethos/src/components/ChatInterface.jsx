@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Clipboard, Trash2, Menu, Pin } from 'lucide-react';
+import { Bot, Clipboard, Trash2, Menu, Pin, Volume2, VolumeX, Download, Upload } from 'lucide-react';
 import Markdown from 'react-markdown';
 import Sidebar from './Sidebar/Sidebar';
 import 'jspdf-autotable'; // For better text handling
@@ -10,7 +10,9 @@ import NewChatButton from './NewChatButton'; // Import the new component
 import { pinMessage } from '../utils/MessageUtils'; // Import the new function
 import MessageSender from './MessageSender.jsx'; // Import the new component
 import { stopSearch } from '../utils/SearchController'; // Import the new function
-import useResponseTimer from '../hooks/useResponseTimer'; // Import the custom hook
+import useResponseTimer from '../hooks/useResponseTimer'; // Use the custom hook
+import { useTextToSpeech } from '../hooks/useTextToSpeech';
+import { exportChat, importChat } from '../utils/ChatExport'; // Import the new functions
 
 const ChatApp = () => {
 	const [messages, setMessages] = useState(() => {
@@ -30,6 +32,8 @@ const ChatApp = () => {
 	const [selectedLanguage, setSelectedLanguage] = useState('en');
 	const [pinnedMessages, setPinnedMessages] = useState([]);
 	const abortController = useRef(null); // Create a ref to hold the AbortController
+	const { speak, stop, isSpeaking } = useTextToSpeech();
+	const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
 
 	// Use the custom hook
 	const { responseTimer, startResponseTimer, stopResponseTimer } =
@@ -77,6 +81,14 @@ const ChatApp = () => {
 		stopSearch(abortController, stopResponseTimer, setIsLoading); // Use the new function
 	};
 
+	const handleVoiceResponse = (text) => {
+		if (isSpeaking) {
+			stop();
+		} else {
+			speak(text);
+		}
+	};
+
 	return (
 		<div className='chat-layout'>
 			<Sidebar
@@ -118,6 +130,16 @@ const ChatApp = () => {
 							<Trash2 size={18} />
 						</button>
 						<LogoutButton onLogout={clearHistory} />
+						{/* <button
+							onClick={() => exportChat(messages)}
+							className='export-btn'
+							data-tooltip='Export Chat'
+							aria-label='Export Chat'
+						>
+							<Download size={18} />
+						</button>
+						AN WAY TO EXPORT THE ENTIRE CHAT LOG
+					 */}
 					</div>
 				</div>
 
@@ -157,6 +179,14 @@ const ChatApp = () => {
 												aria-label='Pin Message'
 											>
 												<Pin size={14} />
+											</button>
+											<button
+												onClick={() => handleVoiceResponse(msg.text)}
+												className='icon-btn'
+												data-tooltip={isSpeaking ? 'Stop Speaking' : 'Speak Message'}
+												aria-label={isSpeaking ? 'Stop Speaking' : 'Speak Message'}
+											>
+												{isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
 											</button>
 										</div>
 									)}
