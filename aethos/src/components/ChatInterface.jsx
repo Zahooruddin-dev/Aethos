@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, Clipboard, Trash2, Menu, Pin, Volume2, VolumeX, Download, Upload } from 'lucide-react';
+import {
+	Bot,
+	Clipboard,
+	Trash2,
+	Menu,
+	Pin,
+	Volume2,
+	VolumeX,
+	Download,
+	Upload,
+} from 'lucide-react';
 import Markdown from 'react-markdown';
 import Sidebar from './Sidebar/Sidebar';
 import 'jspdf-autotable'; // For better text handling
@@ -183,10 +193,18 @@ const ChatApp = () => {
 											<button
 												onClick={() => handleVoiceResponse(msg.text)}
 												className='icon-btn'
-												data-tooltip={isSpeaking ? 'Stop Speaking' : 'Speak Message'}
-												aria-label={isSpeaking ? 'Stop Speaking' : 'Speak Message'}
+												data-tooltip={
+													isSpeaking ? 'Stop Speaking' : 'Speak Message'
+												}
+												aria-label={
+													isSpeaking ? 'Stop Speaking' : 'Speak Message'
+												}
 											>
-												{isSpeaking ? <VolumeX size={14} /> : <Volume2 size={14} />}
+												{isSpeaking ? (
+													<VolumeX size={14} />
+												) : (
+													<Volume2 size={14} />
+												)}
 											</button>
 										</div>
 									)}
