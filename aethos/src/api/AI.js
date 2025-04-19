@@ -1,47 +1,53 @@
+const messageHistory = [];
+
 const callAI = async (prompt) => {
-	try {
-		const response = await fetch(
-			import.meta.env.VITE_OPENROUTER_API_URL + '/chat/completions',
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
-					'HTTP-Referer': window.location.href,
-					'X-Title': 'Aethos Chat',
-				},
-				body: JSON.stringify({
-					model: MODEL_NAME,
-					messages: [
-						{
-							role: 'user',
-							content: prompt,
-						},
-					],
-					temperature: 0.7,
-					max_tokens: 1000,
-				}),
-			}
-		);
+    try {
+        // Add new user message to history
+        messageHistory.push({
+            role: 'user',
+            content: prompt
+        });
 
-		if (!response.ok) {
-			const errorData = await response.json();
-			console.error('API Error Response:', errorData);
-			throw new Error(`HTTP error! status: ${response.status}`);
-		}
+        const response = await fetch(
+            import.meta.env.VITE_OPENROUTER_API_URL + '/chat/completions',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${import.meta.env.VITE_OPENROUTER_API_KEY}`,
+                    'HTTP-Referer': window.location.href,
+                    'X-Title': 'Aethos Chat',
+                },
+                body: JSON.stringify({
+                    model: MODEL_NAME,
+                    messages: messageHistory, // Use entire message history
+                    temperature: 0.7,
+                    max_tokens: 1000,
+                }),
+            }
+        );
 
-		const data = await response.json();
-		console.log('API Response:', data); // Debug log
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('API Error Response:', errorData);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-		if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-			throw new Error('Invalid response format from API');
-		}
+        const data = await response.json();
+        console.log('API Response:', data);
 
-		return data.choices[0].message.content;
-	} catch (error) {
-		console.error('AI Service Error:', error);
-		throw new Error('Failed to get AI response');
-	}
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+            throw new Error('Invalid response format from API');
+        }
+
+        // Add AI's response to history
+        messageHistory.push(data.choices[0].message);
+
+        return data.choices[0].message.content;
+    } catch (error) {
+        console.error('AI Service Error:', error);
+        throw new Error('Failed to get AI response');
+    }
 };
 
 export const translateText = async (text, targetLanguage) => {
@@ -58,5 +64,4 @@ export const translateText = async (text, targetLanguage) => {
 };
 export const MODEL_NAME = 'nvidia/llama-3.1-nemotron-nano-8b-v1:free';
 
-// Existing code...
 export default callAI;
