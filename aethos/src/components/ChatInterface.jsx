@@ -10,7 +10,9 @@ import {
 	VolumeX,
 	Download,
 	Upload,
+	BrainCircuit,
 } from 'lucide-react';
+import { clearConversation } from '../api/AI'; // Keep this one import
 import Markdown from 'react-markdown';
 import Sidebar from './Sidebar/Sidebar';
 import 'jspdf-autotable'; // For better text handling
@@ -132,6 +134,14 @@ const ChatApp = () => {
 					<div className='header-buttons'>
 						<NewChatButton clearHistory={clearHistory} messages={messages} />
 						<button
+							onClick={() => clearConversation()}
+							className='clear-btn'
+							data-tooltip='Clear AI Memory'
+							aria-label='Clear AI Memory'
+						>
+							<BrainCircuit size={18} />
+						</button>
+						<button
 							onClick={clearHistory}
 							className='clear-btn'
 							data-tooltip='Clear Chat History'
@@ -140,16 +150,6 @@ const ChatApp = () => {
 							<Trash2 size={18} />
 						</button>
 						<LogoutButton onLogout={clearHistory} />
-						{/* <button
-							onClick={() => exportChat(messages)}
-							className='export-btn'
-							data-tooltip='Export Chat'
-							aria-label='Export Chat'
-						>
-							<Download size={18} />
-						</button>
-						AN WAY TO EXPORT THE ENTIRE CHAT LOG
-					 */}
 					</div>
 				</div>
 
