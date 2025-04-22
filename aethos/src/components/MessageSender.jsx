@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { RefreshCw, Send } from 'lucide-react';
 import callAI, { translateText } from '../api/AI.js';
 import { languageOptions, useLanguage } from '../utils/LanguageOptions';
+import VoiceInput from './VoiceInput';
 
 const MessageSender = ({
 	input,
@@ -18,6 +19,10 @@ const MessageSender = ({
 
 	const handlePersonalityChange = (e) => {
 		setSelectedPersonality(e.target.value);
+	};
+
+	const handleSpeechResult = (transcript) => {
+		setInput(transcript);
 	};
 
 	const handleSendMessage = async (e) => {
@@ -138,15 +143,18 @@ const MessageSender = ({
 					disabled={isLoading}
 					className='message-input'
 				/>
-				<button
-					type='submit'
-					className='send-btn'
-					disabled={isLoading || !input.trim()}
-					data-tooltip={isLoading ? 'Stop Search' : 'Send Message'}
-					aria-label={isLoading ? 'Stop Search' : 'Send Message'}
-				>
-					{isLoading ? <RefreshCw className='animate-spin' /> : <Send />}
-				</button>
+				<div className='buttons-container'>
+					<VoiceInput onSpeechResult={handleSpeechResult} isLoading={isLoading} />
+					<button
+						type='submit'
+						className='send-btn'
+						disabled={isLoading || !input.trim()}
+						data-tooltip={isLoading ? 'Stop Search' : 'Send Message'}
+						aria-label={isLoading ? 'Stop Search' : 'Send Message'}
+					>
+						{isLoading ? <RefreshCw className='animate-spin' /> : <Send />}
+					</button>
+				</div>
 			</form>
 		</div>
 	);

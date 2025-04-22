@@ -50,6 +50,7 @@
 
 [data-tooltip] {
   position: relative;
+  
 }
 
 [data-tooltip]:before {

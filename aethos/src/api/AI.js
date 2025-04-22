@@ -2,12 +2,34 @@
 let sessions = new Map();
 let currentSessionId = null;
 
-const createNewSession = () => {
+// Initialize from localStorage
+const initializeSessions = () => {
+    try {
+        const savedSessions = localStorage.getItem('chatSessions');
+        if (savedSessions) {
+            sessions = new Map(JSON.parse(savedSessions));
+        }
+        currentSessionId = localStorage.getItem('currentSessionId');
+    } catch (error) {
+        console.error('Failed to load sessions:', error);
+    }
+};
+
+initializeSessions();
+
+const saveSessions = () => {
+    localStorage.setItem('chatSessions', JSON.stringify(Array.from(sessions.entries())));
+    localStorage.setItem('currentSessionId', currentSessionId);
+};
+
+export const createNewSession = () => {
     const sessionId = Date.now().toString();
     sessions.set(sessionId, [{
         role: 'system',
-        content: 'You are an AI named Mizuka, a helpful and friendly assistant. Maintain context of the conversation and provide relevant responses based on the chat history.'
+        content: 'You are an AI named Mizuka, a helpful and friendly assistant.'
     }]);
+    currentSessionId = sessionId;
+    saveSessions();
     return sessionId;
 };
 
@@ -16,6 +38,7 @@ export const switchSession = (sessionId) => {
         return createNewSession();
     }
     currentSessionId = sessionId;
+    saveSessions();
     return sessionId;
 };
 
@@ -68,6 +91,7 @@ const callAI = async (prompt) => {
 
         // Add AI's response to history
         messageHistory.push(data.choices[0].message);
+        saveSessions();
 
         return data.choices[0].message.content;
     } catch (error) {
@@ -78,18 +102,15 @@ const callAI = async (prompt) => {
 
 export const clearConversation = () => {
     if (currentSessionId) {
-        sessions.set(currentSessionId, [{
-            role: 'system',
-            content: 'You are an AI named Mizuka, a helpful and friendly assistant. Maintain context of the conversation and provide relevant responses based on the chat history.'
-        }]);
+        createNewSession();
     }
 };
 
 export const getAllSessions = () => {
     return Array.from(sessions.entries()).map(([id, messages]) => ({
         id,
-        messages,
-        preview: messages.length > 1 ? messages[1].content : 'Empty conversation'
+        preview: messages.length > 1 ? messages[1].content : 'New Chat',
+        timestamp: parseInt(id)
     }));
 };
 
