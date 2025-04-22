@@ -4,9 +4,11 @@ import { Link, useLocation } from 'react-router-dom';
 import './Sidebar.css';
 
 const Sidebar = ({ 
-  isOpen,
-  onClose,
-  chatHistory = [],
+  isOpen, 
+  onClose, 
+  chatSessions = [], 
+  currentSessionId,
+  onSessionSelect,
   pinnedMessages = [],
   setPinnedMessages,
   messages = []
@@ -37,22 +39,15 @@ const Sidebar = ({
     return () => document.removeEventListener('keydown', handleEscKey);
   }, [isMobile, isOpen, onClose]);
 
-  // Memoized filter function
-  const getFilteredChats = useCallback(() => {
-    if (!Array.isArray(chatHistory)) return [];
-    
-    return searchTerm
-      ? chatHistory.filter(chat => 
-          chat?.text?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      : chatHistory;
-  }, [chatHistory, searchTerm]);
-
-  const filteredChats = getFilteredChats();
-
   const handleUnpin = (messageId, event) => {
     event.stopPropagation();
     setPinnedMessages(prev => prev.filter(id => id !== messageId));
+  };
+
+  const handleSessionClick = (sessionId) => {
+    switchSession(sessionId);
+    onSessionSelect(sessionId);
+    if (isMobile) onClose();
   };
 
   const sidebarClassName = `sidebar ${!isOpen ? 'closed' : ''} ${isMobile ? 'mobile' : ''}`;
@@ -84,17 +79,22 @@ const Sidebar = ({
           <div className="nav-section">
             <h3>Recent Chats</h3>
             <div className="chat-list">
-              {filteredChats.length > 0 ? (
-                filteredChats.map((chat) => (
-                  <div key={chat?.id || Math.random()} className="chat-item">
+              {chatSessions.length > 0 ? (
+                chatSessions.map((session) => (
+                  <div 
+                    key={session.id} 
+                    className={`chat-item ${session.id === currentSessionId ? 'active' : ''}`}
+                    onClick={() => handleSessionClick(session.id)}
+                  >
                     <MessageCircle size={18} />
                     <span className="chat-text">
-                      {chat?.text?.substring(0, 40)}{chat?.text?.length > 40 ? '...' : ''}
+                      {session.messages[0]?.text?.substring(0, 40) || 'Empty chat'}
+                      {session.messages[0]?.text?.length > 40 ? '...' : ''}
                     </span>
                   </div>
                 ))
               ) : (
-                <div className="empty-state">No conversations yet</div>
+                <div className="empty-state">No recent chats</div>
               )}
             </div>
           </div>

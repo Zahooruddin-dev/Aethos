@@ -114,6 +114,11 @@
   transform: translateX(4px);
 }
 
+.chat-item.active {
+  background: rgba(255, 255, 255, 0.1);
+  border-left: 3px solid #4cafac;
+}
+
 .chat-text {
   font-size: 0.9rem;
   line-height: 1.4;

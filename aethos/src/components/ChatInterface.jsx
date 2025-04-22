@@ -12,7 +12,7 @@ import {
 	Upload,
 	BrainCircuit,
 } from 'lucide-react';
-import { clearConversation } from '../api/AI'; // Keep this one import
+import { clearConversation, switchSession, getAllSessions } from '../api/AI'; // Updated import
 import Markdown from 'react-markdown';
 import Sidebar from './Sidebar/Sidebar';
 import 'jspdf-autotable'; // For better text handling
@@ -37,15 +37,31 @@ const ChatApp = () => {
 	const messagesEndRef = useRef(null);
 	const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 	const [isFusionAIEnabled, setIsFusionAIEnabled] = useState(true);
-	const [chatSessions, setChatSessions] = useState(() => {
-		const saved = localStorage.getItem('chatSessions');
-		return saved ? JSON.parse(saved) : [];
-	});
 	const [selectedLanguage, setSelectedLanguage] = useState('en');
 	const [pinnedMessages, setPinnedMessages] = useState([]);
 	const abortController = useRef(null); // Create a ref to hold the AbortController
 	const { speak, stop, isSpeaking } = useTextToSpeech();
 	const [isVoiceEnabled, setIsVoiceEnabled] = useState(false);
+
+	// Add new state for sessions
+	const [currentSessionId, setCurrentSessionId] = useState(() => {
+		const saved = localStorage.getItem('currentSessionId');
+		return saved || null;
+	});
+
+	const [chatSessions, setChatSessions] = useState(() => {
+		const saved = localStorage.getItem('chatSessions');
+		return saved ? JSON.parse(saved) : [];
+	});
+
+	// Save sessions to localStorage
+	useEffect(() => {
+		localStorage.setItem('chatSessions', JSON.stringify(chatSessions));
+	}, [chatSessions]);
+
+	useEffect(() => {
+		localStorage.setItem('currentSessionId', currentSessionId);
+	}, [currentSessionId]);
 
 	// Use the custom hook
 	const { responseTimer, startResponseTimer, stopResponseTimer } =
@@ -99,6 +115,26 @@ const ChatApp = () => {
 		} else {
 			speak(text);
 		}
+	};
+
+	const handleNewChat = () => {
+		// Save current session to recent chats
+		if (messages.length > 0) {
+			setChatSessions((prev) => [
+				...prev,
+				{
+					id: currentSessionId,
+					messages,
+					timestamp: Date.now(),
+				},
+			]);
+		}
+
+		// Create new session
+		const newSessionId = switchSession(Date.now().toString());
+		setCurrentSessionId(newSessionId);
+		setMessages([]);
+		clearConversation();
 	};
 
 	return (
