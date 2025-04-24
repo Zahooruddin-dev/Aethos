@@ -144,7 +144,10 @@ const MessageSender = ({
 					className='message-input'
 				/>
 				<div className='buttons-container'>
-					<VoiceInput onSpeechResult={handleSpeechResult} isLoading={isLoading} />
+					<VoiceInput
+						onSpeechResult={handleSpeechResult}
+						isLoading={isLoading}
+					/>
 					<button
 						type='submit'
 						className='send-btn'
