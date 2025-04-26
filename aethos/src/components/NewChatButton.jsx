@@ -36,4 +36,4 @@ const NewChatButton = ({ clearHistory, messages }) => {
 	);
 };
 
-export default NewChatButton; 
+export default NewChatButton;

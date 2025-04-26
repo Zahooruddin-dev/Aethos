@@ -18,10 +18,15 @@ const LogoutButton = ({ onLogout }) => {
 	};
 
 	return (
-		<button onClick={handleLogout} className='logout-btn' data-tooltip='Logout' aria-label='Logout'>
+		<button
+			onClick={handleLogout}
+			className='logout-btn'
+			data-tooltip='Logout'
+			aria-label='Logout'
+		>
 			<LogOut size={18} />
 		</button>
 	);
 };
 
-export default LogoutButton; 
+export default LogoutButton;

@@ -114,10 +114,15 @@ const PDFDownloader = ({ text, messageId }) => {
 	};
 
 	return (
-		<button onClick={downloadPDF} className='icon-btn' data-tooltip='Download as PDF' aria-label='Download as PDF'>
+		<button
+			onClick={downloadPDF}
+			className='icon-btn'
+			data-tooltip='Download as PDF'
+			aria-label='Download as PDF'
+		>
 			<FileDown size={16} />
 		</button>
 	);
 };
 
-export default PDFDownloader; 
+export default PDFDownloader;
