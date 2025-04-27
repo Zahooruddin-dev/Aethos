@@ -8,4 +8,4 @@ export const pinMessage = (messageId, pinnedMessages, setPinnedMessages) => {
 		}
 		return [...prev, messageId]; // Pin the message
 	});
-}; 
+};
