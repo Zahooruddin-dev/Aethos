@@ -59,27 +59,40 @@ const Login = () => {
 	return (
 		<div className='login-container'>
 			<h2>Login</h2>
-			{error && <div className='error-message'>{error}</div>}
-			<form onSubmit={handleSubmit}>
-				<input
-					type='email'
-					value={email}
-					onChange={(e) => setEmail(e.target.value)}
-					placeholder='Email'
-					required
-				/>
-				<input
-					type='password'
-					value={password}
-					onChange={(e) => setPassword(e.target.value)}
-					placeholder='Password'
-					required
-				/>
+			{error && <div className='error-message' role="alert">{error}</div>}
+			<form onSubmit={handleSubmit} name="login" autoComplete="on">
+				<div className="form-group">
+					<label htmlFor="email">Email</label>
+					<input
+						id="email"
+						type='email'
+						name="email"
+						value={email}
+						onChange={(e) => setEmail(e.target.value)}
+						placeholder='Email'
+						required
+						autoComplete="username"
+					/>
+				</div>
+				<div className="form-group">
+					<label htmlFor="password">Password</label>
+					<input
+						id="password"
+						type='password'
+						name="current-password"
+						value={password}
+						onChange={(e) => setPassword(e.target.value)}
+						placeholder='Password'
+						required
+						autoComplete="current-password"
+					/>
+				</div>
 				<div className='button-container'>
 					<button type='submit' disabled={isLoading}>
 						{isLoading ? 'Logging in...' : 'Login'}
 					</button>
 					<button
+						type="button"
 						onClick={handleGoogleSignIn}
 						disabled={isLoading}
 						className='google-sign-in-button'
