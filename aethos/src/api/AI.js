@@ -2,6 +2,8 @@
 let sessions = new Map();
 let currentSessionId = null;
 
+//
+/* Privated file of imporved prompts soon to be merged */
 // Initialize from localStorage
 const initializeSessions = () => {
     try {
